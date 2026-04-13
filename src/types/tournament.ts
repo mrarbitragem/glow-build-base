@@ -64,7 +64,7 @@ export interface MatchDef {
   scheduleKey: string;
 }
 
-export interface EvaluatedMatch extends MatchDef {
+export interface EvaluatedMatch extends Omit<MatchDef, 'left' | 'right'> {
   saved: MatchState;
   left: Entrant;
   right: Entrant;
