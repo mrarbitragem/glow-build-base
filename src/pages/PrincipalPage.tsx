@@ -14,7 +14,7 @@ export function PrincipalPage() {
       <div className="hero card main">
         <div>
           <span className="badge main">Chave principal</span>
-          <h1>{state.event.title} · {category.name}</h1>
+          <h1>Categoria {category.name}</h1>
           <div className="meta">{state.event.local} · Árbitro Geral: {state.event.arbitroGeral}</div>
         </div>
         <div className="grid-stats grid-stats-single">
@@ -25,7 +25,7 @@ export function PrincipalPage() {
       <div className="section-head">
         <div>
           <div className="section-title">Chave principal</div>
-          <div className="section-sub">A numeração JOGO considera apenas confrontos reais. Jogos com BYE não exibem código nem agenda.</div>
+          <div className="section-sub">A numeração considera apenas confrontos reais. Jogos com BYE não exibem código nem agenda.</div>
         </div>
       </div>
 

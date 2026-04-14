@@ -14,7 +14,7 @@ export function DisputasPage() {
       <div className="hero card dispute">
         <div>
           <span className="badge dispute">Disputa de posições</span>
-          <h1>{state.event.title} · {category.name}</h1>
+          <h1>Categoria {category.name}</h1>
           <div className="meta">Blocos de definição de posições organizados conforme o tamanho real de cada chave.</div>
         </div>
         <div className="grid-stats grid-stats-single">
