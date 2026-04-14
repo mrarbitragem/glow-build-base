@@ -1,7 +1,9 @@
 import { useTournament } from '@/context/TournamentContext';
+import { useTheme } from '@/hooks/useTheme';
 
 export function TopBar() {
-  const { ui, setPage, setShowLogin } = useTournament();
+  const { state, ui, setPage, setShowLogin } = useTournament();
+  const { theme, toggle } = useTheme();
 
   const openAdmin = () => {
     if (ui.isAdmin) {
@@ -20,15 +22,13 @@ export function TopBar() {
   return (
     <header className="sticky top-0 z-40 flex justify-between items-center gap-3.5 flex-wrap px-4 py-3.5 bg-topbar text-white shadow-topbar backdrop-blur-[12px]">
       <div className="flex gap-3 items-center">
-        <div className="w-12 h-12 rounded-[14px] grid place-items-center bg-brand-mark font-extrabold shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]">
-          BT
-        </div>
+        <img src="/images/logo-mr.png" alt="Logo MR" className="w-12 h-12 rounded-[14px] object-contain" />
         <div>
-          <div className="font-extrabold text-lg leading-tight">Interclubes Local</div>
-          <div className="text-xs opacity-70 mt-1">HTML local com chave principal, posições, classificação e administração visual</div>
+          <div className="font-extrabold text-lg leading-tight topbar-title">{state.event.title}</div>
+          <div className="text-xs opacity-70 mt-1 topbar-info">{state.event.local} · Árbitro Geral: {state.event.arbitroGeral}</div>
         </div>
       </div>
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-2 flex-wrap items-center topbar-pills">
         {pills.map(p => (
           <button
             key={p.page}
@@ -43,6 +43,9 @@ export function TopBar() {
           className={`pill warn ${ui.page === 'admin' ? 'active' : ''}`}
         >
           {ui.isAdmin ? 'Admin' : 'Entrar no admin'}
+        </button>
+        <button className="theme-toggle" onClick={toggle} title="Alternar tema">
+          {theme === 'dark' ? '☀️' : '🌙'}
         </button>
       </div>
     </header>
