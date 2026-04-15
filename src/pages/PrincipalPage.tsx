@@ -15,7 +15,6 @@ export function PrincipalPage() {
         <div>
           <span className="badge main">Chave principal</span>
           <h1>Categoria {category.name}</h1>
-          <div className="meta">{state.event.local} · Árbitro Geral: {state.event.arbitroGeral}</div>
         </div>
         <div className="grid-stats grid-stats-single">
           <div className="stat"><small>Clubes na categoria</small><strong>{realClubs}</strong></div>
@@ -25,7 +24,7 @@ export function PrincipalPage() {
       <div className="section-head">
         <div>
           <div className="section-title">Chave principal</div>
-          <div className="section-sub">A numeração considera apenas confrontos reais. Jogos com BYE não exibem código nem agenda.</div>
+          <div className="section-sub">Clubes eliminados da chave principal poderão ser vistos na chave de Posições</div>
         </div>
       </div>
 

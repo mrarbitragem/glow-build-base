@@ -108,6 +108,13 @@ export function BracketView({ rounds, kind, scopeKey, finalTitle, finalPlace, is
 
   const championName = finalMatch.winnerClubId ? getClubName(finalMatch.winnerClubId) : 'Aguardando resultado';
   const placementText = finalPlace ? `${finalPlace}º Lugar` : 'Campeão';
+  const hasSecondaryPlace = kind === 'dispute' && !!finalPlace;
+  const secondaryPlace = hasSecondaryPlace ? finalPlace + 1 : 0;
+  const secondaryName = hasSecondaryPlace
+    ? (finalMatch.loserClubId
+      ? (finalMatch.winnerChoice === '1' ? finalMatch.right.name : finalMatch.left.name)
+      : 'Aguardando resultado')
+    : '';
 
   return (
     <div className="bracket-inner" style={{ width: layout.width, height: layout.height }}>
@@ -159,6 +166,12 @@ export function BracketView({ rounds, kind, scopeKey, finalTitle, finalPlace, is
         <div className="kicker">{finalTitle || 'Resultado final'}</div>
         <div className="champ">{championName}</div>
         <div className="place">{placementText}</div>
+        {hasSecondaryPlace && (
+          <div className="runner-up">
+            <div className="runner-up-name">{secondaryName}</div>
+            <div className="runner-up-place">{secondaryPlace}º Lugar</div>
+          </div>
+        )}
       </div>
     </div>
   );

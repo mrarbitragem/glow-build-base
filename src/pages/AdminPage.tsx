@@ -204,6 +204,7 @@ function AdminCanvas() {
   const { state, ui, getCategory, selectMatch, openMatchModal } = useTournament();
   const category = getCategory(ui.categoryId);
   const struct = evaluateStructure(category, state.clubs);
+  const printedAt = new Date().toLocaleString('pt-BR');
 
   const handleMatchClick = (matchId: string) => {
     selectMatch(matchId);
@@ -211,7 +212,16 @@ function AdminCanvas() {
   };
 
   return (
-    <div className="card panel canvas-panel">
+    <div className={`card panel canvas-panel ${ui.adminMode === 'main' ? 'admin-print-main' : 'admin-print-disputes'}`}>
+      <div className="print-header">
+        <div className="print-event-title">{state.event.title}</div>
+        <div className="print-header-grid">
+          <div><strong>LOCAL</strong> {state.event.local}</div>
+          <div><strong>CATEGORIA</strong> {category.name}</div>
+          <div><strong>ÁRBITRO GERAL</strong> {state.event.arbitroGeral}</div>
+          <div><strong>IMPRESSO</strong> {printedAt}</div>
+        </div>
+      </div>
       <div className="canvas-head">
         <div>
           <h3>Chave desenhada · {category.name}</h3>

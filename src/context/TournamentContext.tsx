@@ -122,7 +122,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const doLogin = useCallback((user: string, pass: string): boolean => {
-    if (user === 'arbitro' && pass === 'arbitragem') {
+    if (user === 'mrarbitragem' && pass === '14253600@') {
       setUi(prev => ({ ...prev, isAdmin: true, showLogin: false, loginError: '', page: 'admin' }));
       return true;
     }

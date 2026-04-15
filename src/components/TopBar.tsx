@@ -4,6 +4,7 @@ import { useTheme } from '@/hooks/useTheme';
 export function TopBar() {
   const { state, ui, setPage, setShowLogin } = useTournament();
   const { theme, toggle } = useTheme();
+  const canPrint = ui.page === 'admin';
 
   const openAdmin = () => {
     if (ui.isAdmin) {
@@ -25,7 +26,7 @@ export function TopBar() {
         <img src="/images/logo-mr.png" alt="Logo MR" className="w-12 h-12 rounded-[14px] object-contain" />
         <div>
           <div className="font-extrabold text-lg leading-tight topbar-title">{state.event.title}</div>
-          <div className="text-xs opacity-70 mt-1 topbar-info">{state.event.local} · Árbitro Geral: {state.event.arbitroGeral}</div>
+          <div className="text-xs mt-1 topbar-info">{state.event.local} · Árbitro Geral: {state.event.arbitroGeral}</div>
         </div>
       </div>
       <div className="flex gap-2 flex-wrap items-center topbar-pills">
@@ -42,8 +43,13 @@ export function TopBar() {
           onClick={openAdmin}
           className={`pill warn ${ui.page === 'admin' ? 'active' : ''}`}
         >
-          {ui.isAdmin ? 'Admin' : 'Entrar no admin'}
+          {ui.isAdmin ? 'Admin' : 'Acesso'}
         </button>
+        {canPrint && (
+          <button className="pill print-btn" onClick={() => window.print()}>
+            Imprimir
+          </button>
+        )}
         <button className="theme-toggle" onClick={toggle} title="Alternar tema">
           {theme === 'dark' ? '☀️' : '🌙'}
         </button>

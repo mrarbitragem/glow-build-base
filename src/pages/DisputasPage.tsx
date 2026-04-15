@@ -15,7 +15,6 @@ export function DisputasPage() {
         <div>
           <span className="badge dispute">Disputa de posições</span>
           <h1>Categoria {category.name}</h1>
-          <div className="meta">Blocos de definição de posições organizados conforme o tamanho real de cada chave.</div>
         </div>
         <div className="grid-stats grid-stats-single">
           <div className="stat"><small>Clubes na categoria</small><strong>{countRealSeeds(category.seeds)}</strong></div>
