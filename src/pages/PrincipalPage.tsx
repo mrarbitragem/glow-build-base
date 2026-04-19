@@ -1,6 +1,7 @@
 import { useTournament } from '@/context/TournamentContext';
 import { evaluateStructure, countRealSeeds } from '@/utils/bracketEngine';
-import { BracketView } from '@/components/BracketView';
+import { BracketView, BlockView } from '@/components/BracketView';
+import { DirectNinthPlaceCard } from '@/components/DirectNinthPlaceCard';
 import { ClassificationTable } from '@/components/ClassificationTable';
 
 export function PrincipalPage() {
@@ -8,12 +9,25 @@ export function PrincipalPage() {
   const category = getCategory(ui.categoryId);
   const struct = evaluateStructure(category, state.clubs);
   const realClubs = countRealSeeds(category.seeds);
+  const bNinthPlayoffBlock =
+    category.id === 'b' ? struct.placementBlocks.find(b => b.key.includes('place-b9-playoff')) : undefined;
+  const c911PlayoffBlock =
+    category.id === 'c' || category.id === '40+'
+      ? struct.placementBlocks.find(b => b.key.includes('place-c9-11-playoff'))
+      : undefined;
+  const positionBlocks = struct.placementBlocks.filter(
+    b =>
+      b.startPlace >= 3 &&
+      !(bNinthPlayoffBlock && b.key === bNinthPlayoffBlock.key) &&
+      !(c911PlayoffBlock && b.key === c911PlayoffBlock.key)
+  );
+  const showPosUnderChaves = !ui.showPlacementBrackets;
 
   return (
     <div className="page">
       <div className="hero card main">
         <div>
-          <span className="badge main">Chave principal</span>
+          <span className="badge main">Chaves</span>
           <h1>Categoria {category.name}</h1>
         </div>
         <div className="grid-stats grid-stats-single">
@@ -23,8 +37,8 @@ export function PrincipalPage() {
 
       <div className="section-head">
         <div>
-          <div className="section-title">Chave principal</div>
-          <div className="section-sub">Clubes eliminados da chave principal poderão ser vistos na chave de Posições</div>
+          <div className="section-title">Chaves</div>
+          <div className="section-sub">Disputa do título (1º e 2º lugares ao final).</div>
         </div>
       </div>
 
@@ -36,6 +50,34 @@ export function PrincipalPage() {
           finalTitle="Campeão da categoria"
         />
       </div>
+
+      {struct.directPlacesFromR1Playables !== undefined && (
+        <DirectNinthPlaceCard matches={struct.directPlacesFromR1Playables} clubs={state.clubs} />
+      )}
+
+      {bNinthPlayoffBlock && <BlockView block={bNinthPlayoffBlock} />}
+
+      {c911PlayoffBlock && <BlockView block={c911PlayoffBlock} />}
+
+      {showPosUnderChaves && (
+        <>
+          <div className="section-head">
+            <div>
+              <div className="section-title">Chave de posições</div>
+              <div className="section-sub">Disputas de colocação entre perdedores da chave de cima.</div>
+            </div>
+          </div>
+          {positionBlocks.length > 0 ? (
+            positionBlocks.map(block => <BlockView key={block.key} block={block} />)
+          ) : (
+            <div className="card panel empty-positions-hint">
+              <p className="helper">
+                As mini-chaves de posição passam a aparecer quando o sorteio e os clubes estiverem consistentes com o tamanho desta categoria.
+              </p>
+            </div>
+          )}
+        </>
+      )}
 
       <ClassificationTable category={category} clubs={state.clubs} />
     </div>

@@ -11,7 +11,7 @@ export function LoginModal() {
   return (
     <div className="login-backdrop">
       <div className="login">
-        <h2>Acesso admin</h2>
+        <h2>Acesso</h2>
         <p>Informe usuário e senha de operação para acessar o painel.</p>
         <div className="stack">
           <div className="field">

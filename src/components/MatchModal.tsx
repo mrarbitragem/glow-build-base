@@ -26,7 +26,7 @@ export function MatchModal() {
       <div className="modal-card" onClick={e => e.stopPropagation()}>
         <div className="modal-head">
           <div>
-            <div className="modal-kicker">{match.scope === 'main' ? 'Chave principal' : 'Disputa de posições'}</div>
+            <div className="modal-kicker">{match.scope === 'main' ? 'Chaves' : 'Chave de posições'}</div>
             <h3>{title}</h3>
           </div>
           <button className="icon-btn" onClick={closeMatchModal}>×</button>

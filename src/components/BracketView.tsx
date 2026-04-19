@@ -1,6 +1,7 @@
 import { EvaluatedMatch, BlockResult } from '@/types/tournament';
 import { bracketLayout } from '@/utils/bracketEngine';
-import { formatDateTime, initials } from '@/utils/helpers';
+import { formatDateTime } from '@/utils/helpers';
+import { ClubFlagMedia } from '@/components/ClubFlagMedia';
 import { visibleMatchCode } from '@/utils/bracketEngine';
 
 interface BracketViewProps {
@@ -15,26 +16,18 @@ interface BracketViewProps {
 }
 
 function RenderFlag({ entrant }: { entrant: { flag?: string; clubId?: string; name: string } }) {
-  const val = entrant.flag || '';
-  if (val && val.startsWith('data:image')) {
-    return (
-      <div className="flag">
-        <img src={val} alt={`Bandeira ${entrant.name}`} className="w-full h-full object-cover" />
-      </div>
-    );
-  }
-  if (val) {
-    return <div className="flag">{val}</div>;
-  }
-  return <div className="flag placeholder">{initials(entrant.name)}</div>;
+  return <ClubFlagMedia flag={entrant.flag} name={entrant.name} boxClassName="flag" />;
 }
 
 function MatchCardContent({ match }: { match: EvaluatedMatch }) {
   const leftWin = match.winnerChoice === '1';
   const rightWin = match.winnerChoice === '2';
-  const showFooter = !!match.playable;
   const codeLabel = visibleMatchCode(match);
-  const dateLabel = showFooter ? formatDateTime(match.effectiveDate) : '';
+  const dateLabel =
+    match.playable && String(match.effectiveDate || '').trim()
+      ? formatDateTime(match.effectiveDate)
+      : '';
+  const showFooter = !!match.playable || !!codeLabel.trim();
 
   return (
     <>
@@ -209,16 +202,12 @@ export function BlockView({ block, isAdmin, selectedMatchId, onMatchClick }: Blo
 
   if (!block.rounds?.length) return null;
 
-  const sub = block.startPlace >= 3 && block.startPlace < 9
-    ? 'Confrontos de definição de posições'
-    : 'Rodadas ajustadas conforme o tamanho real da chave';
-
   return (
     <>
       <div className="bracket-section">
         <div className="block-title-strip">
           <strong>{block.title}</strong>
-          <span>{sub}</span>
+          <span>Colocação: perdedores da chave principal.</span>
         </div>
         <div className="bracket-box dispute">
           <BracketView
@@ -233,6 +222,30 @@ export function BlockView({ block, isAdmin, selectedMatchId, onMatchClick }: Blo
           />
         </div>
       </div>
+      {block.footer11thFromMatchId && (() => {
+        const m = block.rounds.flat().find(x => x.id === block.footer11thFromMatchId);
+        if (!m) return null;
+        const loserName =
+          m.loserClubId && (m.left.clubId === m.loserClubId ? m.left.name : m.right.clubId === m.loserClubId ? m.right.name : null);
+        return (
+          <div className="bracket-section">
+            <div className="block-title-strip">
+              <strong>11º lugar</strong>
+              <span>Perdedor do jogo 11</span>
+            </div>
+            <div className="classification">
+              <table className="table">
+                <tbody>
+                  <tr>
+                    <td className="num">11º</td>
+                    <td>{loserName || 'Aguardando resultado'}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })()}
       {block.children.map(child => (
         <BlockView
           key={child.key}

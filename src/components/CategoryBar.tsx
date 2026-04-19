@@ -6,7 +6,7 @@ export function CategoryBar() {
   if (ui.page === 'geral') return null;
 
   return (
-    <div className="overflow-auto whitespace-nowrap bg-white/95 border-b border-line shadow-[0_4px12px_rgba(15,23,42,0.04)] scrollbar-hide">
+    <div className="relative z-10 overflow-auto whitespace-nowrap bg-white/95 border-b border-line shadow-[0_4px12px_rgba(15,23,42,0.04)] scrollbar-hide">
       {state.categoryOrder.map(id => {
         const cat = getCategory(id);
         return (

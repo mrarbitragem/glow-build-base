@@ -113,7 +113,57 @@
 }
 
 /* App shell */
-.app { min-height: 100vh; }
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+/* Marca d’água MR em toda a área visível (atrás de header, conteúdo e rodapé) */
+.app::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url('/images/logo-mr.png');
+  background-repeat: repeat;
+  background-position: 0 0;
+  background-size: 6rem 6rem;
+  opacity: 0.048;
+}
+.app-body {
+  flex: 1 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.app-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px 16px;
+  padding: 24px 16px 28px;
+  border-top: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
+  color: hsl(var(--muted-foreground));
+  font-size: 0.9rem;
+  position: relative;
+  z-index: 1;
+}
+.app-footer-label {
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+.app-footer-logo {
+  height: 3.25rem;
+  width: auto;
+  max-width: 120px;
+  object-fit: contain;
+  opacity: 1;
+  display: block;
+}
 
 /* Top bar — use hsl(... / a); hsla(var(--token), a) is invalid with space-separated channel vars */
 .bg-topbar {
@@ -121,7 +171,51 @@
   color: #fff;
 }
 .bg-topbar .topbar-title { color: #fff; }
-.bg-topbar .topbar-info { color: rgba(255, 255, 255, 0.88); }
+.bg-topbar .topbar-info {
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.35;
+  min-width: 0;
+}
+.topbar-info-sep { user-select: none; }
+/* Logo FBT: altura fixa, largura pela proporção — evita caixa quadrada com “vazio” nas laterais */
+.topbar-logo {
+  display: block;
+  width: auto;
+  height: 3rem;
+  max-height: 3rem;
+}
+
+/* Acesso: logo MR clicável (substitui o botão «Acesso») */
+.topbar-access-logo {
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 6px 8px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.topbar-access-logo:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.topbar-access-logo:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.topbar-access-logo.active {
+  border-color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.24);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+.topbar-access-logo-img {
+  display: block;
+  height: 2rem;
+  width: auto;
+  max-width: 2.75rem;
+  object-fit: contain;
+}
 .shadow-topbar { box-shadow: 0 14px 30px rgba(0,0,0,0.18); }
 .bg-brand-mark { background: linear-gradient(135deg, hsl(var(--brand-light) / 36%), hsl(var(--brand-dark) / 18%)); }
 
@@ -140,6 +234,15 @@
 .pill:hover { background: rgba(255,255,255,0.08); }
 .pill.active { background: #fff; color: hsl(var(--topbar-bg)); border-color: #fff; }
 .pill.warn { color: #ffd5a7; border-color: rgba(251,146,60,0.28); }
+.topbar-logout-pill {
+  color: #fecaca;
+  border-color: rgba(248, 113, 113, 0.45);
+  font-weight: 800;
+}
+.topbar-logout-pill:hover {
+  background: rgba(248, 113, 113, 0.18);
+  border-color: rgba(252, 165, 165, 0.55);
+}
 .pill.print-btn { color: #d7f0ff; border-color: rgba(125, 211, 252, 0.35); }
 
 /* Category bar / tabs */
@@ -185,7 +288,13 @@
 .hero.main { background: linear-gradient(135deg, hsl(var(--primary) / 7%), hsl(var(--accent) / 3%)); }
 .hero.dispute { background: linear-gradient(135deg, hsl(var(--warning) / 8%), hsl(var(--warning) / 3%)); }
 .hero h1 { font-size: 1.85rem; line-height: 1.06; margin: 0 0 6px; letter-spacing: -0.02em; }
+.hero .helper.dispute-intro { margin: 8px 0 0; max-width: min(62ch, 100%); }
 .hero .meta { color: hsl(var(--muted-foreground)); font-size: 0.96rem; }
+
+.empty-positions-hint {
+  margin-bottom: 18px;
+  padding: 16px 18px;
+}
 
 /* Badge */
 .badge {
@@ -244,6 +353,56 @@
 .block-title-strip strong { display: block; font-size: 1rem; }
 .block-title-strip span { font-size: 0.9rem; color: hsl(var(--muted-foreground)); }
 
+/* 9º lugar direto (A / Sub 18) — abaixo da chave principal */
+.ninth-place-section { margin-top: 10px; }
+.ninth-place-slots {
+  display: grid;
+  gap: 16px;
+  margin-top: 10px;
+}
+.ninth-place-slot-head {
+  margin-bottom: 6px;
+}
+.ninth-place-slot-head strong {
+  display: block;
+  font-size: 0.95rem;
+  margin-bottom: 2px;
+}
+.ninth-place-slot-sub {
+  display: block;
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+.ninth-place-body { padding: 4px 2px 2px; border-radius: 14px; transition: background 0.15s ease, box-shadow 0.15s ease; }
+.ninth-place-body--clickable {
+  cursor: pointer;
+}
+.ninth-place-body--clickable:hover {
+  background: hsl(var(--accent) / 8%);
+}
+.ninth-place-body--active {
+  box-shadow: 0 0 0 2px hsl(var(--accent) / 35%);
+}
+.ninth-place-hint { margin: 0 0 8px; font-size: 0.82rem; }
+.ninth-place-pending { margin: 0 0 4px; }
+.ninth-place-classif { margin-top: 4px; }
+.ninth-place-club-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ninth-place-pair {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 0.94rem;
+}
+.ninth-place-pair-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 /* Bracket box */
 .bracket-box {
   padding: 16px;
@@ -295,31 +454,57 @@
 .team-line { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
 .team-line + .team-line { border-top: 1px solid hsl(var(--border)); }
 
+/* Caixa fixa 4:3, moldura branca (padding), imagem centrada sem distorcer */
 .flag {
-  width: 22px;
-  height: 16px;
-  border-radius: 4px;
-  border: 1px solid hsl(var(--border));
-  background: hsl(var(--surface-2));
+  width: 30px;
+  height: 23px;
+  aspect-ratio: 4 / 3;
+  border-radius: 5px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #fff;
+  padding: 3px;
+  box-sizing: border-box;
   display: grid;
   place-items: center;
-  font-size: 0.70rem;
+  font-size: 0.72rem;
   flex: 0 0 auto;
   overflow: hidden;
   color: hsl(var(--muted-foreground));
   font-weight: 700;
 }
-/* contain: evita recorte de logos com proporções diferentes (horizontal vs quadrado) */
-.flag img { width: 100%; height: 100%; object-fit: contain; object-position: center; padding: 1px; }
-.flag.large { width: 34px; height: 24px; font-size: 0.9rem; }
-.flag.placeholder { background: hsl(var(--surface-2)); }
+.flag img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+}
+.flag.large {
+  width: 52px;
+  height: 39px;
+  padding: 4px;
+  font-size: 0.95rem;
+}
+.flag.placeholder {
+  background: hsl(var(--surface-2));
+  border-color: hsl(var(--border));
+}
 
-/* Bandeira maior só na chave (cards de jogo); cadastro admin segue .flag / .flag.large */
+/* Chave: bandeiras um pouco maiores, mesma caixa para todos, moldura branca */
 .match-card .flag {
-  width: 32px;
-  height: 24px;
+  width: 46px;
+  height: 35px;
+  padding: 4px;
   border-radius: 6px;
-  font-size: 0.72rem;
+  background: #fff;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+  font-size: 0.78rem;
+}
+.match-card .flag.placeholder {
+  background: hsl(var(--surface-2));
+  border: 1px solid hsl(var(--border));
+  box-shadow: none;
 }
 
 .team-name {
@@ -621,7 +806,14 @@
   .round-schedule-item { grid-template-columns: 1fr; }
   .grid-stats { min-width: 0; }
   .grid-stats-single { grid-template-columns: 1fr; }
-  .topbar-info { display: none !important; }
+  .topbar-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    overflow-wrap: anywhere;
+  }
+  .topbar-info-sep { display: none !important; }
   .topbar-title { font-size: 1rem !important; }
   .topbar-pills { gap: 4px !important; }
   .pill { padding: 8px 10px; font-size: 12px; }
@@ -707,6 +899,9 @@
 
   .bracket-box.main {
     zoom: 0.54;
+  }
+  .app::before {
+    display: none !important;
   }
 
   .admin-print-main {

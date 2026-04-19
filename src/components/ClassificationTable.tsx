@@ -12,7 +12,7 @@ export function ClassificationTable({ category, clubs }: Props) {
   const rowMap = new Map(rows.map(r => [r.place, r]));
   const totalPlaces = countRealSeeds(category.seeds);
 
-  if (!totalPlaces || rows.length === 0) return null;
+  if (!totalPlaces) return null;
 
   return (
     <div className="classification">
