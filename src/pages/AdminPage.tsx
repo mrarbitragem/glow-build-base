@@ -1,6 +1,12 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { useTournament } from '@/context/TournamentContext';
-import { evaluateStructure, countRealSeeds, scheduleLabel, collectMatches } from '@/utils/bracketEngine';
+import {
+  evaluateStructure,
+  countRealSeeds,
+  scheduleLabel,
+  collectMatches,
+  categoryHasTwelveClubNineToTwelvePlayoff,
+} from '@/utils/bracketEngine';
 import { BracketView, BlockView } from '@/components/BracketView';
 import { DirectNinthPlaceCard } from '@/components/DirectNinthPlaceCard';
 import { ClubFlagMedia } from '@/components/ClubFlagMedia';
@@ -405,11 +411,18 @@ function AdminCanvas() {
     category.id === 'c' || category.id === '40+'
       ? struct.placementBlocks.find(b => b.key.includes('place-c9-11-playoff'))
       : undefined;
+  const mini912TwelveClubBlock = categoryHasTwelveClubNineToTwelvePlayoff(category.id)
+    ? struct.placementBlocks.find(b => b.key.includes('place-d9-12-playoff'))
+    : undefined;
+  const sub12FiveSixBlock =
+    category.id === 'sub-12' ? struct.placementBlocks.find(b => b.key.includes('place-sub12-5-6-playoff')) : undefined;
   const filteredPlacementBlocks = struct.placementBlocks.filter(
     b =>
       b.startPlace >= 3 &&
       !(bNinthPlayoffBlock && b.key === bNinthPlayoffBlock.key) &&
-      !(c911PlayoffBlock && b.key === c911PlayoffBlock.key)
+      !(c911PlayoffBlock && b.key === c911PlayoffBlock.key) &&
+      !(mini912TwelveClubBlock && b.key === mini912TwelveClubBlock.key) &&
+      !(sub12FiveSixBlock && b.key === sub12FiveSixBlock.key)
   );
   const printedAt = new Date().toLocaleString('pt-BR');
 
@@ -482,6 +495,22 @@ function AdminCanvas() {
               onMatchClick={handleMatchClick}
             />
           )}
+          {mini912TwelveClubBlock && (
+            <BlockView
+              block={mini912TwelveClubBlock}
+              isAdmin
+              selectedMatchId={ui.selectedMatchId}
+              onMatchClick={handleMatchClick}
+            />
+          )}
+          {sub12FiveSixBlock && (
+            <BlockView
+              block={sub12FiveSixBlock}
+              isAdmin
+              selectedMatchId={ui.selectedMatchId}
+              onMatchClick={handleMatchClick}
+            />
+          )}
           {!ui.showPlacementBrackets &&
             filteredPlacementBlocks.map(block => (
               <BlockView
@@ -500,6 +529,38 @@ function AdminCanvas() {
               Página pública «Posições» oculta: visitantes não veem o separador «Posições». Aqui a chave segue disponível para agenda e resultados.
             </p>
           )}
+          {bNinthPlayoffBlock && (
+            <BlockView
+              block={bNinthPlayoffBlock}
+              isAdmin
+              selectedMatchId={ui.selectedMatchId}
+              onMatchClick={handleMatchClick}
+            />
+          )}
+          {c911PlayoffBlock && (
+            <BlockView
+              block={c911PlayoffBlock}
+              isAdmin
+              selectedMatchId={ui.selectedMatchId}
+              onMatchClick={handleMatchClick}
+            />
+          )}
+          {mini912TwelveClubBlock && (
+            <BlockView
+              block={mini912TwelveClubBlock}
+              isAdmin
+              selectedMatchId={ui.selectedMatchId}
+              onMatchClick={handleMatchClick}
+            />
+          )}
+          {sub12FiveSixBlock && (
+            <BlockView
+              block={sub12FiveSixBlock}
+              isAdmin
+              selectedMatchId={ui.selectedMatchId}
+              onMatchClick={handleMatchClick}
+            />
+          )}
           {filteredPlacementBlocks.length > 0 ? (
             filteredPlacementBlocks.map(block => (
               <BlockView
@@ -510,11 +571,11 @@ function AdminCanvas() {
                 onMatchClick={handleMatchClick}
               />
             ))
-          ) : (
+          ) : !bNinthPlayoffBlock && !c911PlayoffBlock && !mini912TwelveClubBlock && !sub12FiveSixBlock ? (
             <p className="helper">
               Ainda não há mini-chaves de posição nesta categoria. Confirme o sorteio e os clubes em cada vaga.
             </p>
-          )}
+          ) : null}
         </>
       )}
     </div>

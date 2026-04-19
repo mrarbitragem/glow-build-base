@@ -57,7 +57,7 @@ export function TopBar() {
           aria-label="Acesso ao painel de administração"
           title="Acesso"
         >
-          <img src="/images/logo-mr.png" alt="" width={40} height={40} decoding="async" className="topbar-access-logo-img" />
+          <img src="/images/logo-mr.png" alt="" decoding="async" className="topbar-access-logo-img" />
         </button>
         {ui.isAdmin && (
           <button

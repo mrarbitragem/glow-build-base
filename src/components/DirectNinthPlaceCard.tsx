@@ -3,7 +3,7 @@ import { hasExplicitResult, visibleMatchCode } from '@/utils/bracketEngine';
 import { ClubFlagMedia } from '@/components/ClubFlagMedia';
 
 export interface DirectNinthPlaceCardProps {
-  /** Ordem: índice 0 → 9º, 1 → 10º (categoria B). Entradas `null` = ainda não há N-ésimo jogo jogável na R1. */
+  /** A e Sub 18: um item (9º). Índice 0 → 9º; entradas `null` = ainda não há jogo jogável na R1. */
   matches: (EvaluatedMatch | null)[];
   clubs: Club[];
   isAdmin?: boolean;
@@ -45,6 +45,8 @@ function PlaceSlot({
     if (match && onDefiningMatchClick) onDefiningMatchClick(match.id);
   };
 
+  const showNineClubStyle = place === 9;
+
   return (
     <div
       className={`ninth-place-body${clickable ? ' ninth-place-body--clickable' : ''}${active ? ' ninth-place-body--active' : ''}`}
@@ -67,16 +69,54 @@ function PlaceSlot({
           Clique aqui para abrir o confronto do {place}º lugar e lançar ou alterar o resultado.
         </p>
       )}
-      <div className="ninth-place-slot-head">
-        <span className="helper ninth-place-slot-sub">
-          {match
-            ? `Perdedor do ${place === 9 ? 'primeiro' : 'segundo'} jogo jogável da 1ª rodada${jogo ? ` (${jogo})` : ''}.`
-            : `Perdedor do ${place === 9 ? 'primeiro' : 'segundo'} jogo jogável da 1ª rodada, quando existir na chave.`}
-        </span>
-      </div>
-      {!match ? (
+
+      {!showNineClubStyle && (
+        <div className="ninth-place-slot-head">
+          <span className="helper ninth-place-slot-sub">
+            {match
+              ? `Perdedor do jogo 2${jogo ? ` (${jogo})` : ''}.`
+              : 'Perdedor do jogo 2, quando existir na chave.'}
+          </span>
+        </div>
+      )}
+
+      {showNineClubStyle ? (
+        <>
+          {!match ? (
+            <div className="ninth-place-status-row">
+              <span className="ninth-place-status-place">9º</span>
+              <span className="ninth-place-status-text">Aguardando resultado</span>
+            </div>
+          ) : resolved && loser ? (
+            <div className="ninth-place-status-row ninth-place-status-row--resolved">
+              <span className="ninth-place-status-place">9º</span>
+              <div className="ninth-place-status-club">
+                <ClubFlagMedia flag={loser.flag || ''} name={loser.name} boxClassName="flag" />
+                <strong>{loser.name}</strong>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="ninth-place-status-row">
+                <span className="ninth-place-status-place">9º</span>
+                <span className="ninth-place-status-text">Aguardando resultado</span>
+              </div>
+              <div className="ninth-place-pair" aria-hidden={!match.playable}>
+                <div className="ninth-place-pair-line">
+                  <ClubFlagMedia flag={match.left.flag} name={match.left.name} boxClassName="flag" />
+                  <span>{match.left.name}</span>
+                </div>
+                <div className="ninth-place-pair-line">
+                  <ClubFlagMedia flag={match.right.flag} name={match.right.name} boxClassName="flag" />
+                  <span>{match.right.name}</span>
+                </div>
+              </div>
+            </>
+          )}
+        </>
+      ) : !match ? (
         <p className="helper ninth-place-pending">
-          Ainda não há {place === 9 ? 'primeiro' : 'segundo'} confronto jogável na 1ª rodada.
+          Ainda não há confronto jogável para o jogo 2 na 1ª rodada.
         </p>
       ) : resolved && loser ? (
         <div className="classification ninth-place-classif">
@@ -128,9 +168,7 @@ export function DirectNinthPlaceCard({
     <div className="bracket-section ninth-place-section">
       <div className="block-title-strip">
         <strong>9º lugar</strong>
-        <span>
-          Perdedor do primeiro jogo jogável da 1ª rodada (JOGO 1 na ordem da tabela). Sem mini-chave de 9º a 16º.
-        </span>
+        <span>Perdedor do jogo 1</span>
       </div>
       <div className="ninth-place-slots">
         {matches.map((m, i) => (

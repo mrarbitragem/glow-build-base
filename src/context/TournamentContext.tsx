@@ -11,13 +11,14 @@ import {
   saveChaveCategory,
 } from '@/api/chaveWebhook';
 import { INITIAL_DATA, STORAGE_KEY } from '@/data/initialData';
+import { countRealSeeds } from '@/utils/bracketEngine';
 import { deepClone, slugify, fileToDataUrl } from '@/utils/helpers';
 import { normalizeClubFlagSrc } from '@/utils/clubFlag';
 
 const PLACEMENT_PREF_KEY = 'interclubes-show-positions';
 
 /** Após `select_club`, só pedir `chave` a estas categorias (evita lote grande no n8n). */
-const CHAVE_IDS_AFTER_CLUB_SYNC: readonly string[] = ['40+'];
+const CHAVE_IDS_AFTER_CLUB_SYNC: readonly string[] = ['40+', 'd', 'iniciante', '50'];
 
 function defaultCategoryIdOnBoot(): string {
   const s = loadState();
@@ -38,6 +39,28 @@ function mergeMissingCategoriesFromBootstrap(s: TournamentState): TournamentStat
     if (!order.includes(ic.id)) order.push(ic.id);
   }
   return { ...s, categories: newCats, categoryOrder: order };
+}
+
+const TWELVE_CLUB_16_IDS = ['d', 'iniciante', '50'] as const;
+
+/**
+ * D, Iniciante e 50+: backups em localStorage podem ter `seeds` de 16 posições só com `''` (sem clubes).
+ * Repõe o arranque do INITIAL_DATA para a chave principal e a mini 9–12 voltarem a avaliar.
+ */
+function repairEmptyTwelveClubCategorySeeds(s: TournamentState): TournamentState {
+  return {
+    ...s,
+    categories: s.categories.map(cat => {
+      if (cat.slots !== 16 || !TWELVE_CLUB_16_IDS.includes(cat.id as (typeof TWELVE_CLUB_16_IDS)[number])) return cat;
+      const boot = INITIAL_DATA.categories.find(c => c.id === cat.id);
+      if (!boot?.seeds?.length) return cat;
+      if (!Array.isArray(cat.seeds) || cat.seeds.length !== 16) {
+        return { ...cat, seeds: dedupeClubSeeds(deepClone(boot.seeds) as (string | null)[]) };
+      }
+      if (countRealSeeds(cat.seeds) > 0) return cat;
+      return { ...cat, seeds: dedupeClubSeeds(deepClone(boot.seeds) as (string | null)[]) };
+    }),
+  };
 }
 
 function readShowPlacementPref(): boolean {
@@ -63,7 +86,7 @@ function normalizeState(s: TournamentState): TournamentState {
     return { ...merged, seeds: dedupeClubSeeds((merged.seeds || []) as (string | null)[]) };
   });
   s.categoryOrder = s.categoryOrder?.length ? s.categoryOrder : s.categories.map(c => c.id);
-  return s;
+  return repairEmptyTwelveClubCategorySeeds(s);
 }
 
 function loadState(): TournamentState {

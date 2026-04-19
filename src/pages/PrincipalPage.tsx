@@ -1,5 +1,5 @@
 import { useTournament } from '@/context/TournamentContext';
-import { evaluateStructure, countRealSeeds } from '@/utils/bracketEngine';
+import { evaluateStructure, countRealSeeds, categoryHasTwelveClubNineToTwelvePlayoff } from '@/utils/bracketEngine';
 import { BracketView, BlockView } from '@/components/BracketView';
 import { DirectNinthPlaceCard } from '@/components/DirectNinthPlaceCard';
 import { ClassificationTable } from '@/components/ClassificationTable';
@@ -15,11 +15,19 @@ export function PrincipalPage() {
     category.id === 'c' || category.id === '40+'
       ? struct.placementBlocks.find(b => b.key.includes('place-c9-11-playoff'))
       : undefined;
+  /** D, Iniciante e 50+: mesma mini 9º–12º (`place-d9-12-playoff` no prefixo interno). */
+  const mini912TwelveClubBlock = categoryHasTwelveClubNineToTwelvePlayoff(category.id)
+    ? struct.placementBlocks.find(b => b.key.includes('place-d9-12-playoff'))
+    : undefined;
+  const sub12FiveSixBlock =
+    category.id === 'sub-12' ? struct.placementBlocks.find(b => b.key.includes('place-sub12-5-6-playoff')) : undefined;
   const positionBlocks = struct.placementBlocks.filter(
     b =>
       b.startPlace >= 3 &&
       !(bNinthPlayoffBlock && b.key === bNinthPlayoffBlock.key) &&
-      !(c911PlayoffBlock && b.key === c911PlayoffBlock.key)
+      !(c911PlayoffBlock && b.key === c911PlayoffBlock.key) &&
+      !(mini912TwelveClubBlock && b.key === mini912TwelveClubBlock.key) &&
+      !(sub12FiveSixBlock && b.key === sub12FiveSixBlock.key)
   );
   const showPosUnderChaves = !ui.showPlacementBrackets;
 
@@ -57,6 +65,10 @@ export function PrincipalPage() {
       {bNinthPlayoffBlock && <BlockView block={bNinthPlayoffBlock} />}
 
       {c911PlayoffBlock && <BlockView block={c911PlayoffBlock} />}
+
+      {mini912TwelveClubBlock && <BlockView block={mini912TwelveClubBlock} />}
+
+      {sub12FiveSixBlock && <BlockView block={sub12FiveSixBlock} />}
 
       {showPosUnderChaves && (
         <>

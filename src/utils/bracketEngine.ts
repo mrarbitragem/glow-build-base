@@ -44,8 +44,22 @@ function roundStartPlace(totalRounds: number, roundIndex: number): number {
   return Math.pow(2, totalRounds - roundIndex - 1) + 1;
 }
 
-/** Sem mini-chave de perdedores da R1 (faixa 9–16): A e Sub 18 (9 clubes), B (10 clubes), C e 40+ (11 clubes — mini 9–11 dedicada). */
-const CATEGORIES_SKIP_MAIN_R1_PLACEMENT_BLOCK = new Set(['a', 'sub-18', 'b', 'c', '40+']);
+/** D, Iniciante e 50+ (`id` `50`): 12 clubes em chave de 16 com mini 9º–12º dedicada (não usam a mini genérica 9–16 da R1). */
+export function categoryHasTwelveClubNineToTwelvePlayoff(categoryId: string): boolean {
+  return categoryId === 'd' || categoryId === 'iniciante' || categoryId === '50';
+}
+
+/** Sem mini-chave de perdedores da R1 (faixa 9–16): A e Sub 18 (9 clubes), B (10), C e 40+ (11 — mini 9–11), D / Iniciante / 50+ (12 — mini 9–12 dedicada). */
+const CATEGORIES_SKIP_MAIN_R1_PLACEMENT_BLOCK = new Set([
+  'a',
+  'sub-18',
+  'b',
+  'c',
+  '40+',
+  'd',
+  'iniciante',
+  '50',
+]);
 
 /** Quantos lugares vêm direto do 1º jogo jogável da R1 (só A e Sub 18). Na B, 9º/10º saem da disputa entre perd. JOGO 1 e JOGO 2. */
 function directLowerPlaceSlotsFromR1Count(categoryId: string): number {
@@ -449,8 +463,64 @@ export function evaluateStructure(category: Category, clubs: Club[]): StructureR
     }
   }
 
+  /**
+   * D, Iniciante e 50+ (12 clubes em 16): mini 9º–12º — R1 = perd. JOGO1×perd. JOGO2 | perd. JOGO3×perd. JOGO4;
+   * final = 9º e 10º; 11º e 12º = perdedores dos dois jogos da 1ª rodada desta mini (sub-chave automática).
+   */
+  if (categoryHasTwelveClubNineToTwelvePlayoff(category.id) && slots === 16) {
+    const j = firstNPlayableR1Matches(mainMatches, 4);
+    const m1 = j[0];
+    const m2 = j[1];
+    const m3 = j[2];
+    const m4 = j[3];
+    if (m1 && m2 && m3 && m4) {
+      placementBlocks.push(
+        buildPlacementBlock(
+          'place-d9-12-playoff',
+          [
+            { type: 'loser', matchId: m1.id },
+            { type: 'loser', matchId: m2.id },
+            { type: 'loser', matchId: m3.id },
+            { type: 'loser', matchId: m4.id },
+          ],
+          9,
+          undefined,
+          '9º ao 12º',
+          false
+        )
+      );
+    }
+  }
+
+  /**
+   * Sub 12 (6 clubes em 8): BYE fixos 2 e 7; 5º e 6º = perdedor do Jogo 1 × perdedor do Jogo 2 (2 primeiros jogos jogáveis da R1).
+   * Não se usa a mini geral de perdedores da R1 (4 vagas).
+   */
+  if (category.id === 'sub-12' && slots === 8) {
+    const j = firstNPlayableR1Matches(mainMatches, 2);
+    const m1 = j[0];
+    const m2 = j[1];
+    if (m1 && m2) {
+      placementBlocks.push(
+        buildPlacementBlock(
+          'place-sub12-5-6-playoff',
+          [
+            { type: 'loser', matchId: m1.id },
+            { type: 'loser', matchId: m2.id },
+          ],
+          5,
+          undefined,
+          '5º e 6º',
+          true
+        )
+      );
+    }
+  }
+
+  const skipSub12R1FullLosersBlock = category.id === 'sub-12' && slots === 8;
+
   for (let r = 0; r < mainMatches.length - 1; r++) {
-    if (skipNineThroughSixteenBlock && r === 0) continue;
+    if ((skipNineThroughSixteenBlock && r === 0) || (skipSub12R1FullLosersBlock && r === 0)) continue;
     /** Todas as partidas da rodada na principal — assim a mini-chave de posição existe antes de haver confronto/jogáveis (horários no scheduleKey). */
     const losers = mainMatches[r].map(m => ({ type: 'loser' as const, matchId: m.id }));
     if (losers.length >= 2) {

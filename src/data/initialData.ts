@@ -47,10 +47,49 @@ const SEEDS_CATEGORY_C: (string | null)[] = [
  */
 const SEEDS_CATEGORY_40: (string | null)[] = [...SEEDS_CATEGORY_C];
 
-/** 12 clubes em chave de 16 — 4 BYE */
+/** 12 clubes em chave de 16 — 4 BYE (posições 1-based 2, 6, 11, 15) */
 const BYE_16_X12 = [2, 6, 11, 15] as const;
-/** 6 clubes em chave de 8 — 2 BYE (mesmo desenho Sub 12 / Sub 16) */
+
+/** Categoria D: 12 clubes; BYE nas posições 1-based 2, 6, 11, 15 (índices 0-based 1,5,10,14 = null). */
+const SEEDS_CATEGORY_D: (string | null)[] = [
+  'asbac',
+  null,
+  'aeronautica',
+  'aabr',
+  'iate-clube',
+  null,
+  'kale-praia',
+  'the-club',
+  'mbtc',
+  'vamo-beach',
+  null,
+  'life-beach',
+  'garden',
+  'cota-mil',
+  null,
+  'apcef',
+];
+
+/** Iniciante: mesmo desenho 12×16 e BYE que a D (só arranque; sorteio oficial substitui). */
+const SEEDS_CATEGORY_INICIANTE: (string | null)[] = [...SEEDS_CATEGORY_D];
+
+/** 50+ (`id` `50`): mesmo desenho 12×16 e BYE que a D. */
+const SEEDS_CATEGORY_50: (string | null)[] = [...SEEDS_CATEGORY_D];
+
+/** 6 clubes em chave de 8 — 2 BYE nas posições 1-based 2 e 7 (Sub 12 e Sub 16). */
 const BYE_8_X6 = [2, 7] as const;
+
+/** Sub 12: 6 clubes; BYE nas posições 2 e 7; 5º/6º = perdedores do Jogo 1 e Jogo 2 da R1. */
+const SEEDS_CATEGORY_SUB12: (string | null)[] = [
+  'iate-clube',
+  null,
+  'kale-praia',
+  'aabr',
+  'mbtc',
+  'vamo-beach',
+  null,
+  'garden',
+];
 
 /**
  * Posições 1-based com BYE fixo (igual a `seedsWithFixedByes`).
@@ -109,14 +148,14 @@ export const INITIAL_DATA: TournamentState = {
     { id: "a", name: "A", slots: 16, seeds: seedsWithFixedByes(16, BYE_16_X9), importedPlacements: [], roundDefaults: {}, matchResults: {} },
     { id: "b", name: "B", slots: 16, seeds: seedsWithFixedByes(16, BYE_16_B), importedPlacements: [], roundDefaults: {}, matchResults: {} },
     { id: "c", name: "C", slots: 16, seeds: [...SEEDS_CATEGORY_C], importedPlacements: [], roundDefaults: {}, matchResults: {} },
-    { id: "d", name: "D", slots: 16, seeds: seedsWithFixedByes(16, BYE_16_X12), importedPlacements: [], roundDefaults: {}, matchResults: {} },
-    { id: "iniciante", name: "Iniciante", slots: 16, seeds: seedsWithFixedByes(16, BYE_16_X12), importedPlacements: [], roundDefaults: {}, matchResults: {} },
-    { id: "sub-12", name: "Sub 12", slots: 8, seeds: seedsWithFixedByes(8, BYE_8_X6), importedPlacements: [], roundDefaults: {}, matchResults: {} },
+    { id: "d", name: "D", slots: 16, seeds: [...SEEDS_CATEGORY_D], importedPlacements: [], roundDefaults: {}, matchResults: {} },
+    { id: "iniciante", name: "Iniciante", slots: 16, seeds: [...SEEDS_CATEGORY_INICIANTE], importedPlacements: [], roundDefaults: {}, matchResults: {} },
+    { id: "sub-12", name: "Sub 12", slots: 8, seeds: [...SEEDS_CATEGORY_SUB12], importedPlacements: [], roundDefaults: {}, matchResults: {} },
     { id: "sub-14", name: "Sub 14", slots: 8, seeds: Array.from({ length: 8 }, () => ""), importedPlacements: [], roundDefaults: {}, matchResults: {} },
     { id: "sub-16", name: "Sub 16", slots: 8, seeds: seedsWithFixedByes(8, BYE_8_X6), importedPlacements: [], roundDefaults: {}, matchResults: {} },
     { id: "sub-18", name: "Sub 18", slots: 16, seeds: seedsWithFixedByes(16, BYE_16_X9), importedPlacements: [], roundDefaults: {}, matchResults: {} },
     { id: "40+", name: "40+", slots: 16, seeds: [...SEEDS_CATEGORY_40], importedPlacements: [], roundDefaults: {}, matchResults: {} },
-    { id: "50", name: "50+", slots: 16, seeds: seedsWithFixedByes(16, BYE_16_X12), importedPlacements: [], roundDefaults: {}, matchResults: {} },
+    { id: "50", name: "50+", slots: 16, seeds: [...SEEDS_CATEGORY_50], importedPlacements: [], roundDefaults: {}, matchResults: {} },
     { id: "60", name: "60+", slots: 16, seeds: seedsWithFixedByes(16, BYE_16_X10), importedPlacements: [], roundDefaults: {}, matchResults: {} }
   ],
   categoryOrder: ["profissional", "a", "b", "c", "d", "iniciante", "sub-12", "sub-14", "sub-16", "sub-18", "40+", "50", "60"]
