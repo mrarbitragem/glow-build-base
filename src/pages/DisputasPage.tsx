@@ -30,11 +30,13 @@ export function DisputasPage() {
                   rodada). Mantém-se a disputa de <strong>3º e 4º</strong> entre perdedores das meias-finais.
                 </>
               ) : categorySkipsNineThroughSixteenPlacement(category.id) ? (
-                category.id === 'b' ? (
+                category.id === 'b' || category.id === '60' ? (
                   <>
-                    Na categoria <strong>B</strong>, o bloco <strong>9º e 10º</strong> segue o mesmo critério das outras
-                    colocações (perdedores da chave principal). Não há mini-chave de 9º a 16º; mantém-se a disputa de{' '}
-                    <strong>5º a 8º</strong> entre perdedores das quartas, e as faixas acima conforme a chave.
+                    Na categoria <strong>{category.name}</strong> (10 clubes), o <strong>9º lugar</strong> é decidido na
+                    disputa entre o <strong>perdedor do Jogo 1</strong> e o <strong>perdedor do Jogo 2</strong> (dois
+                    primeiros confrontos da 1ª rodada em que ambos os lados são clube, sem BYE fixo no par). Não há
+                    mini-chave de 9º a 16º na R1 da principal; mantém-se a disputa de <strong>5º a 8º</strong> entre
+                    perdedores das quartas, e as faixas acima conforme a chave.
                   </>
                 ) : category.id === 'c' || category.id === '40+' ? (
                   <>

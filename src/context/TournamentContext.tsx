@@ -18,7 +18,7 @@ import { normalizeClubFlagSrc } from '@/utils/clubFlag';
 const PLACEMENT_PREF_KEY = 'interclubes-show-positions';
 
 /** Após `select_club`, só pedir `chave` a estas categorias (evita lote grande no n8n). */
-const CHAVE_IDS_AFTER_CLUB_SYNC: readonly string[] = ['40+', 'd', 'iniciante', '50'];
+const CHAVE_IDS_AFTER_CLUB_SYNC: readonly string[] = ['40+', 'd', 'iniciante', '50', 'sub-12', '60'];
 
 function defaultCategoryIdOnBoot(): string {
   const s = loadState();
@@ -42,6 +42,7 @@ function mergeMissingCategoriesFromBootstrap(s: TournamentState): TournamentStat
 }
 
 const TWELVE_CLUB_16_IDS = ['d', 'iniciante', '50'] as const;
+const TEN_CLUB_B_STYLE_16_IDS = ['b', '60'] as const;
 
 /**
  * D, Iniciante e 50+: backups em localStorage podem ter `seeds` de 16 posições só com `''` (sem clubes).
@@ -52,6 +53,41 @@ function repairEmptyTwelveClubCategorySeeds(s: TournamentState): TournamentState
     ...s,
     categories: s.categories.map(cat => {
       if (cat.slots !== 16 || !TWELVE_CLUB_16_IDS.includes(cat.id as (typeof TWELVE_CLUB_16_IDS)[number])) return cat;
+      const boot = INITIAL_DATA.categories.find(c => c.id === cat.id);
+      if (!boot?.seeds?.length) return cat;
+      if (!Array.isArray(cat.seeds) || cat.seeds.length !== 16) {
+        return { ...cat, seeds: dedupeClubSeeds(deepClone(boot.seeds) as (string | null)[]) };
+      }
+      if (countRealSeeds(cat.seeds) > 0) return cat;
+      return { ...cat, seeds: dedupeClubSeeds(deepClone(boot.seeds) as (string | null)[]) };
+    }),
+  };
+}
+
+/** Sub 12: localStorage antigo pode ter 8 vagas sem clubes — repõe arranque com BYE 2 e 7. */
+function repairEmptySubTwelveSeeds(s: TournamentState): TournamentState {
+  const boot = INITIAL_DATA.categories.find(c => c.id === 'sub-12');
+  if (!boot?.seeds?.length) return s;
+  return {
+    ...s,
+    categories: s.categories.map(cat => {
+      if (cat.id !== 'sub-12' || cat.slots !== 8) return cat;
+      if (!Array.isArray(cat.seeds) || cat.seeds.length !== 8) {
+        return { ...cat, seeds: dedupeClubSeeds(deepClone(boot.seeds) as (string | null)[]) };
+      }
+      if (countRealSeeds(cat.seeds) > 0) return cat;
+      return { ...cat, seeds: dedupeClubSeeds(deepClone(boot.seeds) as (string | null)[]) };
+    }),
+  };
+}
+
+/** B e 60+: estado antigo sem clubes — repõe arranque (B = vagas vazias + BYE; 60+ = 10 seeds exemplo). */
+function repairEmptyTenClubSixteenSeeds(s: TournamentState): TournamentState {
+  return {
+    ...s,
+    categories: s.categories.map(cat => {
+      if (cat.slots !== 16 || !TEN_CLUB_B_STYLE_16_IDS.includes(cat.id as (typeof TEN_CLUB_B_STYLE_16_IDS)[number]))
+        return cat;
       const boot = INITIAL_DATA.categories.find(c => c.id === cat.id);
       if (!boot?.seeds?.length) return cat;
       if (!Array.isArray(cat.seeds) || cat.seeds.length !== 16) {
@@ -86,7 +122,9 @@ function normalizeState(s: TournamentState): TournamentState {
     return { ...merged, seeds: dedupeClubSeeds((merged.seeds || []) as (string | null)[]) };
   });
   s.categoryOrder = s.categoryOrder?.length ? s.categoryOrder : s.categories.map(c => c.id);
-  return repairEmptyTwelveClubCategorySeeds(s);
+  return repairEmptySubTwelveSeeds(
+    repairEmptyTenClubSixteenSeeds(repairEmptyTwelveClubCategorySeeds(s))
+  );
 }
 
 function loadState(): TournamentState {

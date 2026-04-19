@@ -406,7 +406,9 @@ function AdminCanvas() {
   const category = getCategory(ui.categoryId);
   const struct = evaluateStructure(category, state.clubs);
   const bNinthPlayoffBlock =
-    category.id === 'b' ? struct.placementBlocks.find(b => b.key.includes('place-b9-playoff')) : undefined;
+    category.id === 'b' || category.id === '60'
+      ? struct.placementBlocks.find(b => b.key.includes('place-b9-playoff'))
+      : undefined;
   const c911PlayoffBlock =
     category.id === 'c' || category.id === '40+'
       ? struct.placementBlocks.find(b => b.key.includes('place-c9-11-playoff'))

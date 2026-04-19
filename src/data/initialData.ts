@@ -16,8 +16,6 @@ function seedsWithFixedByes(slotCount: number, byePositionsOneBased: readonly nu
 const BYE_16_X9 = [2, 6, 7, 10, 11, 14, 15] as const;
 /** 10 clubes — chave B (6 BYE nas posições 1-based abaixo) */
 const BYE_16_B = [2, 6, 7, 10, 11, 15] as const;
-/** 10 clubes — modelo anterior usado na 60+ */
-const BYE_16_X10 = [2, 6, 11, 14, 15, 16] as const;
 /** 11 clubes em chave de 16 — 5 BYE (C, 40+, etc.) */
 const BYE_16_X11 = [2, 6, 7, 11, 15] as const;
 
@@ -76,6 +74,26 @@ const SEEDS_CATEGORY_INICIANTE: (string | null)[] = [...SEEDS_CATEGORY_D];
 /** 50+ (`id` `50`): mesmo desenho 12×16 e BYE que a D. */
 const SEEDS_CATEGORY_50: (string | null)[] = [...SEEDS_CATEGORY_D];
 
+/** 60+ (`id` `60`): 10 clubes — mesmos BYE e desenho que a B (`BYE_16_B`). */
+const SEEDS_CATEGORY_60: (string | null)[] = [
+  'iate-clube',
+  null,
+  'kale-praia',
+  'aabr',
+  'vamo-beach',
+  null,
+  null,
+  'mbtc',
+  'the-club',
+  null,
+  null,
+  'nacao-beach',
+  'garden',
+  'cota-mil',
+  null,
+  'apcef',
+];
+
 /** 6 clubes em chave de 8 — 2 BYE nas posições 1-based 2 e 7 (Sub 12 e Sub 16). */
 const BYE_8_X6 = [2, 7] as const;
 
@@ -106,7 +124,8 @@ export const CATEGORY_FIXED_BYE_ONE_BASED: Partial<Record<string, readonly numbe
   'sub-18': BYE_16_X9,
   '40+': BYE_16_X11,
   '50': BYE_16_X12,
-  '60': BYE_16_X10,
+  /** 10 clubes em 16 — igual à B. */
+  '60': BYE_16_B,
 };
 
 export const INITIAL_DATA: TournamentState = {
@@ -156,7 +175,7 @@ export const INITIAL_DATA: TournamentState = {
     { id: "sub-18", name: "Sub 18", slots: 16, seeds: seedsWithFixedByes(16, BYE_16_X9), importedPlacements: [], roundDefaults: {}, matchResults: {} },
     { id: "40+", name: "40+", slots: 16, seeds: [...SEEDS_CATEGORY_40], importedPlacements: [], roundDefaults: {}, matchResults: {} },
     { id: "50", name: "50+", slots: 16, seeds: [...SEEDS_CATEGORY_50], importedPlacements: [], roundDefaults: {}, matchResults: {} },
-    { id: "60", name: "60+", slots: 16, seeds: seedsWithFixedByes(16, BYE_16_X10), importedPlacements: [], roundDefaults: {}, matchResults: {} }
+    { id: "60", name: "60+", slots: 16, seeds: [...SEEDS_CATEGORY_60], importedPlacements: [], roundDefaults: {}, matchResults: {} }
   ],
   categoryOrder: ["profissional", "a", "b", "c", "d", "iniciante", "sub-12", "sub-14", "sub-16", "sub-18", "40+", "50", "60"]
 };

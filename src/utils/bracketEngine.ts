@@ -54,6 +54,7 @@ const CATEGORIES_SKIP_MAIN_R1_PLACEMENT_BLOCK = new Set([
   'a',
   'sub-18',
   'b',
+  '60',
   'c',
   '40+',
   'd',
@@ -76,6 +77,31 @@ function firstNPlayableR1Matches(mainMatches: EvaluatedMatch[][], n: number): (E
   const playables = r1.filter(m => m.playable);
   const out: (EvaluatedMatch | null)[] = [];
   for (let i = 0; i < n; i++) out.push(playables[i] ?? null);
+  return out;
+}
+
+/**
+ * Primeiros N jogos da R1 cujo par de vagas **não** inclui BYE fixo no sorteio (índices 0-based).
+ * Garante blocos de posição (ex.: Sub 12 → 5º/6º) mesmo antes de haver clubes em todas as vagas.
+ */
+function firstNMainR1MatchesSkippingFixedByeSlots(
+  mainMatches: EvaluatedMatch[][],
+  slots: number,
+  byePositionsOneBased: readonly number[],
+  n: number
+): (EvaluatedMatch | null)[] {
+  const bye0 = new Set(byePositionsOneBased.map(p => p - 1));
+  const r1 = mainMatches[0] || [];
+  const out: (EvaluatedMatch | null)[] = [];
+  const matchCount = slots / 2;
+  for (let mi = 0; mi < matchCount; mi++) {
+    const a = mi * 2;
+    const b = a + 1;
+    if (bye0.has(a) || bye0.has(b)) continue;
+    out.push(r1[mi] ?? null);
+    if (out.length >= n) break;
+  }
+  while (out.length < n) out.push(null);
   return out;
 }
 
@@ -410,9 +436,12 @@ export function evaluateStructure(category: Category, clubs: Club[]): StructureR
   const placementBlocks: BlockResult[] = [];
   const skipNineThroughSixteenBlock = CATEGORIES_SKIP_MAIN_R1_PLACEMENT_BLOCK.has(category.id);
 
-  /** B: disputa 9º entre perdedores dos dois primeiros pares «só clubes» da R1 (= JOGO1 e JOGO2 com 10 clubes). Sempre que existir desenho BYE da B, não depende de já haver 2 jogos jogáveis. */
-  if (category.id === 'b' && slots === 16) {
-    const byes = CATEGORY_FIXED_BYE_ONE_BASED['b'];
+  /**
+   * B e 60+ (10 clubes em 16): disputa 9º entre perdedores dos dois primeiros pares «só clubes» da R1 (= JOGO1 e JOGO2).
+   * Usa o mapa de BYE fixo da categoria (`BYE_16_B` para ambas).
+   */
+  if ((category.id === 'b' || category.id === '60') && slots === 16) {
+    const byes = CATEGORY_FIXED_BYE_ONE_BASED[category.id];
     const pair = byes ? firstTwoMainR1MatchNumbersOneBased(byes) : null;
     if (pair) {
       const r1 = mainMatches[0];
@@ -497,7 +526,10 @@ export function evaluateStructure(category: Category, clubs: Club[]): StructureR
    * Não se usa a mini geral de perdedores da R1 (4 vagas).
    */
   if (category.id === 'sub-12' && slots === 8) {
-    const j = firstNPlayableR1Matches(mainMatches, 2);
+    const byeLayout = CATEGORY_FIXED_BYE_ONE_BASED['sub-12'];
+    const j = byeLayout
+      ? firstNMainR1MatchesSkippingFixedByeSlots(mainMatches, slots, byeLayout, 2)
+      : firstNPlayableR1Matches(mainMatches, 2);
     const m1 = j[0];
     const m2 = j[1];
     if (m1 && m2) {

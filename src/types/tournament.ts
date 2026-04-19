@@ -111,7 +111,7 @@ export interface StructureResult {
   totalGames: number;
   /**
    * A e Sub 18 (9 clubes): 1º jogo jogável da R1 define o 9º direto; 1 item (ou null).
-   * Na B (10 clubes) não é usado — 9º/10º vêm da disputa na chave de posições.
+   * Na B e 60+ (`id` `60`, 10 clubes) não é usado — 9º/10º vêm da disputa na chave de posições.
    * Na C e 40+ (11 clubes) não é usado — 9º/10º/11º vêm da mini-chave dedicada.
    * Na D, Iniciante e 50+ (`id` `50`, 12 clubes) não é usado — 9º–12º vêm da mini-chave dedicada.
    */
