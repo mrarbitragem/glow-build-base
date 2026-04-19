@@ -6,7 +6,7 @@ import { CATEGORY_FIXED_BYE_ONE_BASED } from '@/data/initialData';
 import { nextPow2, parseNum, displayGameCode, formatDateTime } from '@/utils/helpers';
 
 function defaultMatchState(): MatchState {
-  return { score1: '', score2: '', winner: '', datetime: '' };
+  return { score1: '', score2: '', winner: '', datetime: '', inProgress: false, court: '' };
 }
 
 function getMatchState(category: Category, matchId: string): MatchState {

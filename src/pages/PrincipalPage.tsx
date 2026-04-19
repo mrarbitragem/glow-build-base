@@ -37,8 +37,7 @@ export function PrincipalPage() {
 
       <div className="section-head">
         <div>
-          <div className="section-title">Chaves</div>
-          <div className="section-sub">Disputa do título (1º e 2º lugares ao final).</div>
+          <div className="section-title">Chave Principal</div>
         </div>
       </div>
 

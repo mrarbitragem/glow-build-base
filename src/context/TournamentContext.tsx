@@ -106,6 +106,8 @@ interface TournamentContextType {
   setShowLogin: (v: boolean) => void;
   updateEvent: (key: string, value: string) => void;
   setMatchPatch: (categoryId: string, matchId: string, patch: Partial<MatchState>) => void;
+  /** Desmarca «em andamento» em todos os jogos de todas as categorias e grava no webhook por confronto. */
+  clearAllMatchesInProgress: () => void;
   clearMatch: (categoryId: string, matchId: string) => void;
   setRoundDefault: (categoryId: string, scheduleKey: string, value: string) => void;
   setSlotClub: (categoryId: string, idx: number, clubId: string) => void;
@@ -355,25 +357,27 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     updateState(s => {
       const cat = s.categories.find(c => c.id === categoryId);
       if (!cat) return s;
-      const merged: MatchState = {
-        score1: '',
-        score2: '',
-        winner: '',
-        datetime: '',
-        ...cat.matchResults[matchId],
-        ...patch,
-      };
-      queueMicrotask(() => {
-        void saveJogoToWebhook({
-          categoriaId: categoryId,
-          matchId,
-          ...merged,
-        }).catch(() => {
-          /* falha silenciosa: estado já está no localStorage; pode-se ligar toast depois */
-        });
-      });
       const cats = s.categories.map(c => {
         if (c.id !== categoryId) return c;
+        const merged: MatchState = {
+          score1: '',
+          score2: '',
+          winner: '',
+          datetime: '',
+          inProgress: false,
+          court: '',
+          ...c.matchResults[matchId],
+          ...patch,
+        };
+        queueMicrotask(() => {
+          void saveJogoToWebhook({
+            categoriaId: categoryId,
+            matchId,
+            ...merged,
+          }).catch(() => {
+            /* falha silenciosa: estado já está no localStorage; pode-se ligar toast depois */
+          });
+        });
         return {
           ...c,
           matchResults: {
@@ -383,6 +387,46 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         };
       });
       return { ...s, categories: cats };
+    });
+  }, [updateState]);
+
+  const clearAllMatchesInProgress = useCallback(() => {
+    updateState(prev => {
+      const saves: { categoryId: string; matchId: string; merged: MatchState }[] = [];
+      const nextCats = prev.categories.map(cat => {
+        const newMr = { ...cat.matchResults };
+        let touched = false;
+        for (const [mid, st] of Object.entries(newMr)) {
+          if (!st?.inProgress) continue;
+          const merged: MatchState = {
+            score1: '',
+            score2: '',
+            winner: '',
+            datetime: '',
+            court: '',
+            ...st,
+            inProgress: false,
+          };
+          newMr[mid] = merged;
+          touched = true;
+          saves.push({ categoryId: cat.id, matchId: mid, merged });
+        }
+        return touched ? { ...cat, matchResults: newMr } : cat;
+      });
+
+      if (saves.length === 0) return prev;
+
+      queueMicrotask(() => {
+        for (const { categoryId, matchId, merged } of saves) {
+          void saveJogoToWebhook({
+            categoriaId: categoryId,
+            matchId,
+            ...merged,
+          }).catch(() => {});
+        }
+      });
+
+      return { ...prev, categories: nextCats };
     });
   }, [updateState]);
 
@@ -560,7 +604,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     <TournamentContext.Provider value={{
       state, ui, setPage, setCategory, setAdminPanel, setAdminMode, setShowPlacementBrackets,
       selectMatch, openMatchModal, closeMatchModal, doLogin, logout, setShowLogin,
-      updateEvent, setMatchPatch, clearMatch, setRoundDefault, setSlotClub,
+      updateEvent, setMatchPatch, clearAllMatchesInProgress, clearMatch, setRoundDefault, setSlotClub,
       addClub, replaceClubs, editClub, changeClubFlag, removeClub, exportBackup, importBackup, resetAll, getCategory,
       reloadChaveFromServer, reloadAllChavesAfterOfficialDraw,
       refreshClubsFromWebhook,

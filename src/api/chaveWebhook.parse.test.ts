@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseChaveLoadResponse, dedupeClubSeeds } from './chaveWebhook';
+import { parseChaveLoadResponse, dedupeClubSeeds, matchStateFromRow } from './chaveWebhook';
 
 describe('parseChaveLoadResponse', () => {
   it('lê seeds na raiz (resposta plana)', () => {
@@ -36,5 +36,21 @@ describe('parseChaveLoadResponse', () => {
 describe('dedupeClubSeeds', () => {
   it('mantém a primeira ocorrência e limpa duplicatas; preserva null e vazio', () => {
     expect(dedupeClubSeeds(['a', 'b', 'a', null, '', 'b'])).toEqual(['a', 'b', '', null, '', '']);
+  });
+});
+
+describe('matchStateFromRow', () => {
+  it('lê inProgress e quadra/court', () => {
+    expect(
+      matchStateFromRow({
+        score1: '1',
+        score2: '0',
+        winner: '1',
+        datetime: '',
+        inProgress: true,
+        court: 'A',
+      })
+    ).toMatchObject({ inProgress: true, court: 'A' });
+    expect(matchStateFromRow({ quadra: '2', em_andamento: 1 })).toMatchObject({ inProgress: true, court: '2' });
   });
 });

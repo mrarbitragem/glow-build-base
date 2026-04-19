@@ -16,20 +16,21 @@ export function TopBar() {
 
   const pills: { page: typeof ui.page | 'admin'; label: string; warn?: boolean }[] = [
     { page: 'principal', label: 'Chaves' },
+    { page: 'emAndamento', label: 'Em Andamento' },
     ...(ui.showPlacementBrackets ? [{ page: 'disputas' as const, label: 'Posições' }] : []),
     { page: 'geral', label: 'Classificação geral' },
   ];
 
   return (
-    <header className="sticky top-0 z-40 flex justify-between items-center gap-3.5 flex-wrap px-4 py-3.5 bg-topbar text-white shadow-topbar backdrop-blur-[12px]">
-      <div className="flex min-w-0 flex-1 gap-3 items-center">
+    <header className="topbar-root sticky top-0 z-40 px-4 py-3.5 bg-topbar text-white shadow-topbar backdrop-blur-[12px]">
+      <div className="topbar-brand">
         <img
           src="/images/logo-fbt.png"
           alt="FBT"
           className="topbar-logo shrink-0 object-contain object-center"
         />
-        <div className="min-w-0 flex-1">
-          <div className="font-extrabold text-lg leading-tight topbar-title break-words">{state.event.title}</div>
+        <div className="topbar-brand-text">
+          <div className="font-extrabold text-lg leading-snug topbar-title">{state.event.title}</div>
           <div className="text-xs mt-1 topbar-info">
             <span className="topbar-info-local">{state.event.local}</span>
             <span className="topbar-info-sep" aria-hidden="true">
@@ -39,7 +40,7 @@ export function TopBar() {
           </div>
         </div>
       </div>
-      <div className="flex gap-2 flex-wrap items-center topbar-pills">
+      <nav className="topbar-pills" aria-label="Navegação principal">
         {pills.map(p => (
           <button
             key={p.page}
@@ -77,7 +78,7 @@ export function TopBar() {
         <button className="theme-toggle" onClick={toggle} title="Alternar tema">
           {theme === 'dark' ? '☀️' : '🌙'}
         </button>
-      </div>
+      </nav>
     </header>
   );
 }

@@ -25,6 +25,7 @@ function AdminSidebar() {
     resetAll,
     setRoundDefault,
     setShowPlacementBrackets,
+    clearAllMatchesInProgress,
     reloadChaveFromServer,
     reloadAllChavesAfterOfficialDraw,
     refreshClubsFromWebhook,
@@ -172,6 +173,29 @@ function AdminSidebar() {
               <button className={`btn ${ui.adminMode === 'main' ? '' : 'secondary'}`} onClick={() => setAdminMode('main')}>Chaves</button>
               <button className={`btn ${ui.adminMode === 'disputas' ? '' : 'secondary'}`} onClick={() => setAdminMode('disputas')}>Posições</button>
             </div>
+          </div>
+
+          <div className="field">
+            <label className="label">Jogos em andamento</label>
+            <div className="helper">
+              Remove a marcação «em andamento» em <strong>todas as categorias</strong> (página «Em Andamento» e registo por jogo no servidor). Placar, vencedor, horário e quadra mantêm-se.
+            </div>
+            <button
+              type="button"
+              className="btn secondary"
+              onClick={() => {
+                if (
+                  !confirm(
+                    'Remover «em andamento» de todos os jogos em todas as categorias? Esta ação não apaga placares nem quem venceu.'
+                  )
+                ) {
+                  return;
+                }
+                clearAllMatchesInProgress();
+              }}
+            >
+              Limpar todos os jogos em andamento
+            </button>
           </div>
 
           <div className="field">

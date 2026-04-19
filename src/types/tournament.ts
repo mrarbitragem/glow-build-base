@@ -33,6 +33,10 @@ export interface MatchState {
   score2: string;
   winner: string;
   datetime: string;
+  /** Partida marcada como em curso (várias por categoria na página «Em Andamento»). */
+  inProgress: boolean;
+  /** Quadra onde o confronto ocorre (texto livre). */
+  court: string;
 }
 
 export interface Entrant {
@@ -126,7 +130,7 @@ export interface OverallRow {
   perCat: Record<string, number>;
 }
 
-export type PageType = 'principal' | 'disputas' | 'geral' | 'admin';
+export type PageType = 'principal' | 'disputas' | 'emAndamento' | 'geral' | 'admin';
 export type AdminPanel = 'operacao' | 'clubes' | 'categoria';
 export type AdminMode = 'main' | 'disputas';
 

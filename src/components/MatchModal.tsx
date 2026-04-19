@@ -50,6 +50,26 @@ export function MatchModal() {
               onChange={e => setMatchPatch(category.id, match.id, { datetime: e.target.value })}
             />
           </div>
+          <div className="field round-schedule-item" style={{ alignItems: 'center', gap: 10 }}>
+            <input
+              type="checkbox"
+              id="match-in-progress"
+              checked={!!saved.inProgress}
+              onChange={e => setMatchPatch(category.id, match.id, { inProgress: e.target.checked })}
+            />
+            <label htmlFor="match-in-progress" className="label" style={{ fontWeight: 500, margin: 0, cursor: 'pointer' }}>
+              Em andamento (lista na página «Em Andamento»; vários jogos e categorias)
+            </label>
+          </div>
+          <div className="field">
+            <label className="label">Quadra</label>
+            <input
+              className="input"
+              placeholder="Ex.: 1, A, Central…"
+              value={saved.court ?? ''}
+              onChange={e => setMatchPatch(category.id, match.id, { court: e.target.value })}
+            />
+          </div>
           <div className="row">
             <div className="field">
               <label className="label">{match.left.name}</label>

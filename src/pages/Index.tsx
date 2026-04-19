@@ -5,6 +5,7 @@ import { CategoryBar } from '@/components/CategoryBar';
 import { LoginModal } from '@/components/LoginModal';
 import { MatchModal } from '@/components/MatchModal';
 import { PrincipalPage } from '@/pages/PrincipalPage';
+import { EmAndamentoPage } from '@/pages/EmAndamentoPage';
 import { DisputasPage } from '@/pages/DisputasPage';
 import { GeralPage } from '@/pages/GeralPage';
 import { AdminPage } from '@/pages/AdminPage';
@@ -25,6 +26,7 @@ function AppContent() {
       <CategoryBar />
       <div className="app-body">
         {ui.page === 'principal' && <PrincipalPage />}
+        {ui.page === 'emAndamento' && <EmAndamentoPage />}
         {ui.page === 'disputas' && <DisputasPage />}
         {ui.page === 'geral' && <GeralPage />}
         {ui.page === 'admin' && <AdminPage />}

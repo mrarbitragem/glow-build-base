@@ -16,6 +16,7 @@ export type JogoSavePayload = {
   matchId: string;
 } & MatchState;
 
+/** Corpo alinhado a `docs/n8n-jogo-em-andamento.md` (MySQL / n8n). */
 export async function saveJogoToWebhook(payload: JogoSavePayload): Promise<void> {
   const url = getJogoWebhookUrl();
   const body = {
@@ -25,6 +26,9 @@ export async function saveJogoToWebhook(payload: JogoSavePayload): Promise<void>
     score2: payload.score2 ?? '',
     winner: payload.winner ?? '',
     datetime: payload.datetime ?? '',
+    inProgress: !!payload.inProgress,
+    court: payload.court ?? '',
+    quadra: payload.court ?? '',
   };
   let res: Response;
   try {

@@ -22,6 +22,24 @@ export function normalizeChaveSeedsForApp(seeds: (string | null)[], clubs: Club[
 }
 
 /** Mantém `null` (BYE fixo); cada id de clube não vazio aparece no máximo uma vez (primeira posição ganha). */
+function parseBoolLoose(v: unknown): boolean {
+  if (v === true || v === 1) return true;
+  if (v === '1' || (typeof v === 'string' && v.toLowerCase() === 'true')) return true;
+  return false;
+}
+
+/** Monta `MatchState` a partir de objeto vindo do servidor / n8n. */
+export function matchStateFromRow(m: Record<string, unknown>): MatchState {
+  return {
+    score1: String(m.score1 ?? ''),
+    score2: String(m.score2 ?? ''),
+    winner: String(m.winner ?? ''),
+    datetime: String(m.datetime ?? ''),
+    inProgress: parseBoolLoose(m.inProgress ?? m.em_andamento ?? m.emAndamento),
+    court: String(m.court ?? m.quadra ?? ''),
+  };
+}
+
 export function dedupeClubSeeds(seeds: (string | null)[]): (string | null)[] {
   const seen = new Set<string>();
   return seeds.map(cell => {
@@ -201,13 +219,7 @@ function buildChavePayloadFromRow(o: Record<string, unknown>): ChaveLoadPayload 
     const merged: Record<string, MatchState> = {};
     for (const [k, v] of Object.entries(mr)) {
       if (!v || typeof v !== 'object') continue;
-      const m = v as Record<string, unknown>;
-      merged[k] = {
-        score1: String(m.score1 ?? ''),
-        score2: String(m.score2 ?? ''),
-        winner: String(m.winner ?? ''),
-        datetime: String(m.datetime ?? ''),
-      };
+      merged[k] = matchStateFromRow(v as Record<string, unknown>);
     }
     out.matchResults = merged;
   }
@@ -503,13 +515,7 @@ function matchResultsFromPatch(patch: ChaveLoadPayload): Record<string, MatchSta
   const out: Record<string, MatchState> = {};
   for (const [k, v] of Object.entries(mr)) {
     if (!v || typeof v !== 'object') continue;
-    const m = v as Record<string, unknown>;
-    out[k] = {
-      score1: String(m.score1 ?? ''),
-      score2: String(m.score2 ?? ''),
-      winner: String(m.winner ?? ''),
-      datetime: String(m.datetime ?? ''),
-    };
+    out[k] = matchStateFromRow(v as Record<string, unknown>);
   }
   return out;
 }
