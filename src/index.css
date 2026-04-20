@@ -791,6 +791,14 @@
 }
 .canvas-panel { min-width: 0; }
 .print-header { display: none; }
+
+/* Rodapé MR só em impressão (cada página, via position fixed nos browsers comuns) */
+.print-footer-mr {
+  display: none;
+}
+.team-name-print-await {
+  display: none;
+}
 .canvas-head {
   display: flex;
   justify-content: space-between;
@@ -948,7 +956,11 @@
 }
 
 @media print {
-  @page { size: A4 portrait; margin: 8mm; }
+  @page {
+    size: A4 portrait;
+    /* Margem inferior mínima: rodapé fixo fica quase no limite da área imprimível */
+    margin: 8mm 8mm 3mm 8mm;
+  }
 
   body {
     background: #fff !important;
@@ -956,6 +968,44 @@
     font-size: 12px;
   }
 
+  .app-footer {
+    display: none !important;
+  }
+
+  .print-footer-mr {
+    display: flex !important;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    gap: 4px 8px;
+    padding: 0 8px 0;
+    margin: 0;
+    border-top: 1px solid #ccc;
+    background: #fff !important;
+    font-size: 10pt;
+    line-height: 1.15;
+    color: #333;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-footer-mr-label {
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .print-footer-mr-logo {
+    height: 10pt;
+    width: auto;
+    max-width: 72px;
+    object-fit: contain;
+    display: block;
+  }
+
+  .topbar-root,
+  .category-bar-wrap,
   .topbar-pills,
   .theme-toggle,
   .tab,
@@ -966,6 +1016,18 @@
   .canvas-head,
   .block-title-strip span {
     display: none !important;
+  }
+
+  /* «Venc. M…» → mostrar só «Aguardando» no papel */
+  .team-name .team-name-screen,
+  .champ .team-name-screen,
+  .runner-up-name .team-name-screen {
+    display: none !important;
+  }
+  .team-name .team-name-print-await,
+  .champ .team-name-print-await,
+  .runner-up-name .team-name-print-await {
+    display: inline !important;
   }
 
   .sticky {
@@ -990,16 +1052,33 @@
     margin-bottom: 6px;
     text-transform: uppercase;
   }
-  .print-header-grid {
+  .print-header-grid--primary {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 4px 10px;
     font-size: 11px;
   }
-  .print-header-grid strong {
+  .print-header-grid--primary strong {
     font-size: 10px;
     margin-right: 4px;
     letter-spacing: 0.03em;
+  }
+  .print-header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px 16px;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid #e5e5e5;
+    font-size: 9pt;
+    color: #444;
+  }
+  .print-header-meta strong {
+    font-size: 8.5pt;
+    margin-right: 4px;
+    color: #222;
   }
 
   .card,
@@ -1020,19 +1099,60 @@
     border: 0;
   }
 
+  /* Chave principal: categorias com ≥8 clubes — A4, tipos ≥14pt, zoom ajustado */
   .bracket-box.main {
-    zoom: 0.54;
+    zoom: 0.56;
   }
+  .bracket-box.main.bracket-print-gte8 {
+    zoom: 0.68;
+  }
+  .bracket-box.main.bracket-print-gte8 .team-name,
+  .bracket-box.main.bracket-print-gte8 .score,
+  .bracket-box.main.bracket-print-gte8 .match-footer,
+  .bracket-box.main.bracket-print-gte8 .round-label {
+    font-size: 14pt !important;
+    line-height: 1.25;
+  }
+  .bracket-box.main.bracket-print-gte8 .final-box .champ,
+  .bracket-box.main.bracket-print-gte8 .final-box .kicker,
+  .bracket-box.main.bracket-print-gte8 .final-box .place {
+    font-size: 14pt !important;
+  }
+  .bracket-box.main.bracket-print-gte8 .final-box .runner-up-name,
+  .bracket-box.main.bracket-print-gte8 .final-box .runner-up-place {
+    font-size: 13pt !important;
+  }
+
   .app::before {
     display: none !important;
   }
 
-  .admin-print-main {
-    break-after: page;
+  /**
+   * Modo Chaves (admin): após o bloco folha-1 (cabeçalho + chave principal) só vêm minichaves;
+   * várias minis por página; cada .bracket-section inteira — se não couber, vai inteira à página seguinte.
+   */
+  .admin-print-main .admin-print-sheet1-main {
     page-break-after: always;
+    break-after: page;
+  }
+  .admin-print-main .admin-print-sheet1-main .print-header {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .admin-print-main .admin-print-sheet1-main .bracket-box.main {
+    /* chave principal pode ocupar mais de uma folha; minis só depois do fim deste bloco */
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+  .admin-print-main .admin-print-after-main .bracket-section,
+  .admin-print-main .admin-print-after-main .ninth-place-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 10px;
   }
 
-  .admin-print-disputes .bracket-section {
+  .admin-print-disputes .bracket-section,
+  .admin-print-disputes .ninth-place-section {
     break-inside: avoid;
     page-break-inside: avoid;
     margin-bottom: 12px;

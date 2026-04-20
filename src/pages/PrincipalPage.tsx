@@ -32,6 +32,7 @@ export function PrincipalPage() {
       !(sub12FiveSixBlock && b.key === sub12FiveSixBlock.key)
   );
   const showPosUnderChaves = !ui.showPlacementBrackets;
+  const mainBracketPrintGte8 = realClubs >= 8;
 
   return (
     <div className="page">
@@ -51,7 +52,7 @@ export function PrincipalPage() {
         </div>
       </div>
 
-      <div className="bracket-box main">
+      <div className={`bracket-box main${mainBracketPrintGte8 ? ' bracket-print-gte8' : ''}`}>
         <BracketView
           rounds={struct.mainRounds}
           kind="main"

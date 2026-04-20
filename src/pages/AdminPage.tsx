@@ -427,6 +427,8 @@ function AdminCanvas() {
       !(sub12FiveSixBlock && b.key === sub12FiveSixBlock.key)
   );
   const printedAt = new Date().toLocaleString('pt-BR');
+  const seededClubs = countRealSeeds(category.seeds);
+  const mainBracketPrintGte8 = seededClubs >= 8;
 
   const handleMatchClick = (matchId: string) => {
     selectMatch(matchId);
@@ -435,15 +437,6 @@ function AdminCanvas() {
 
   return (
     <div className={`card panel canvas-panel ${ui.adminMode === 'main' ? 'admin-print-main' : 'admin-print-disputes'}`}>
-      <div className="print-header">
-        <div className="print-event-title">{state.event.title}</div>
-        <div className="print-header-grid">
-          <div><strong>LOCAL</strong> {state.event.local}</div>
-          <div><strong>CATEGORIA</strong> {category.name}</div>
-          <div><strong>ÁRBITRO GERAL</strong> {state.event.arbitroGeral}</div>
-          <div><strong>IMPRESSO</strong> {printedAt}</div>
-        </div>
-      </div>
       <div className="canvas-head">
         <div>
           <h3>Chave desenhada · {category.name}</h3>
@@ -455,77 +448,111 @@ function AdminCanvas() {
         </div>
         <div className="canvas-badges">
           <span className="mini-badge">{ui.adminMode === 'main' ? 'Chaves' : 'Posições'}</span>
-          <span className="mini-badge">{countRealSeeds(category.seeds)} clubes</span>
+          <span className="mini-badge">{seededClubs} clubes</span>
         </div>
       </div>
 
       {ui.adminMode === 'main' ? (
         <>
-          <div className="bracket-box main">
-            <BracketView
-              rounds={struct.mainRounds}
-              kind="main"
-              scopeKey="main"
-              finalTitle="Campeão da categoria"
-              isAdmin
-              selectedMatchId={ui.selectedMatchId}
-              onMatchClick={handleMatchClick}
-            />
-          </div>
-          {struct.directPlacesFromR1Playables !== undefined && (
-            <DirectNinthPlaceCard
-              matches={struct.directPlacesFromR1Playables}
-              clubs={state.clubs}
-              isAdmin
-              selectedMatchId={ui.selectedMatchId}
-              onDefiningMatchClick={handleMatchClick}
-            />
-          )}
-          {bNinthPlayoffBlock && (
-            <BlockView
-              block={bNinthPlayoffBlock}
-              isAdmin
-              selectedMatchId={ui.selectedMatchId}
-              onMatchClick={handleMatchClick}
-            />
-          )}
-          {c911PlayoffBlock && (
-            <BlockView
-              block={c911PlayoffBlock}
-              isAdmin
-              selectedMatchId={ui.selectedMatchId}
-              onMatchClick={handleMatchClick}
-            />
-          )}
-          {mini912TwelveClubBlock && (
-            <BlockView
-              block={mini912TwelveClubBlock}
-              isAdmin
-              selectedMatchId={ui.selectedMatchId}
-              onMatchClick={handleMatchClick}
-            />
-          )}
-          {sub12FiveSixBlock && (
-            <BlockView
-              block={sub12FiveSixBlock}
-              isAdmin
-              selectedMatchId={ui.selectedMatchId}
-              onMatchClick={handleMatchClick}
-            />
-          )}
-          {!ui.showPlacementBrackets &&
-            filteredPlacementBlocks.map(block => (
-              <BlockView
-                key={block.key}
-                block={block}
+          <div className="admin-print-sheet1-main">
+            <div className="print-header">
+              <div className="print-event-title">{state.event.title}</div>
+              <div className="print-header-grid print-header-grid--primary">
+                <div><strong>LOCAL</strong> {state.event.local}</div>
+                <div><strong>ÁRBITRO GERAL</strong> {state.event.arbitroGeral}</div>
+              </div>
+              <div className="print-header-meta">
+                <span>
+                  <strong>CATEGORIA</strong> {category.name}
+                </span>
+                <span>
+                  <strong>IMPRESSO</strong> {printedAt}
+                </span>
+              </div>
+            </div>
+            <div className={`bracket-box main${mainBracketPrintGte8 ? ' bracket-print-gte8' : ''}`}>
+              <BracketView
+                rounds={struct.mainRounds}
+                kind="main"
+                scopeKey="main"
+                finalTitle="Campeão da categoria"
                 isAdmin
                 selectedMatchId={ui.selectedMatchId}
                 onMatchClick={handleMatchClick}
               />
-            ))}
+            </div>
+          </div>
+          <div className="admin-print-after-main">
+            {struct.directPlacesFromR1Playables !== undefined && (
+              <DirectNinthPlaceCard
+                matches={struct.directPlacesFromR1Playables}
+                clubs={state.clubs}
+                isAdmin
+                selectedMatchId={ui.selectedMatchId}
+                onDefiningMatchClick={handleMatchClick}
+              />
+            )}
+            {bNinthPlayoffBlock && (
+              <BlockView
+                block={bNinthPlayoffBlock}
+                isAdmin
+                selectedMatchId={ui.selectedMatchId}
+                onMatchClick={handleMatchClick}
+              />
+            )}
+            {c911PlayoffBlock && (
+              <BlockView
+                block={c911PlayoffBlock}
+                isAdmin
+                selectedMatchId={ui.selectedMatchId}
+                onMatchClick={handleMatchClick}
+              />
+            )}
+            {mini912TwelveClubBlock && (
+              <BlockView
+                block={mini912TwelveClubBlock}
+                isAdmin
+                selectedMatchId={ui.selectedMatchId}
+                onMatchClick={handleMatchClick}
+              />
+            )}
+            {sub12FiveSixBlock && (
+              <BlockView
+                block={sub12FiveSixBlock}
+                isAdmin
+                selectedMatchId={ui.selectedMatchId}
+                onMatchClick={handleMatchClick}
+              />
+            )}
+            {!ui.showPlacementBrackets &&
+              filteredPlacementBlocks.map(block => (
+                <BlockView
+                  key={block.key}
+                  block={block}
+                  isAdmin
+                  selectedMatchId={ui.selectedMatchId}
+                  onMatchClick={handleMatchClick}
+                />
+              ))}
+          </div>
         </>
       ) : (
         <>
+          <div className="print-header">
+            <div className="print-event-title">{state.event.title}</div>
+            <div className="print-header-grid print-header-grid--primary">
+              <div><strong>LOCAL</strong> {state.event.local}</div>
+              <div><strong>ÁRBITRO GERAL</strong> {state.event.arbitroGeral}</div>
+            </div>
+            <div className="print-header-meta">
+              <span>
+                <strong>CATEGORIA</strong> {category.name}
+              </span>
+              <span>
+                <strong>IMPRESSO</strong> {printedAt}
+              </span>
+            </div>
+          </div>
           {!ui.showPlacementBrackets && (
             <p className="helper" style={{ marginBottom: 8 }}>
               Página pública «Posições» oculta: visitantes não veem o separador «Posições». Aqui a chave segue disponível para agenda e resultados.

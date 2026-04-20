@@ -32,6 +32,10 @@ function AppContent() {
         {ui.page === 'admin' && <AdminPage />}
       </div>
       <AppFooter />
+      <div className="print-footer-mr" aria-hidden="true">
+        <span className="print-footer-mr-label">Desenvolvido por</span>
+        <img src="/images/logo-mr.png" alt="" className="print-footer-mr-logo" decoding="async" />
+      </div>
       <LoginModal />
       <MatchModal />
     </div>

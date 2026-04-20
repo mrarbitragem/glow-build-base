@@ -19,6 +19,47 @@ function RenderFlag({ entrant }: { entrant: { flag?: string; clubId?: string; na
   return <ClubFlagMedia flag={entrant.flag} name={entrant.name} boxClassName="flag" />;
 }
 
+function isWinnerPlaceholderName(name: string): boolean {
+  return name.startsWith('Venc.');
+}
+
+/** Em impressão mostra «Aguardando» em vez de «Venc. M…». */
+function PrintSwapVencName({ text }: { text: string }) {
+  if (isWinnerPlaceholderName(text)) {
+    return (
+      <>
+        <span className="team-name-screen">{text}</span>
+        <span className="team-name-print-await">Aguardando</span>
+      </>
+    );
+  }
+  return <>{text}</>;
+}
+
+function TeamNameCell({
+  name,
+  dim,
+  winner,
+}: {
+  name: string;
+  dim: boolean;
+  winner: boolean;
+}) {
+  const venc = isWinnerPlaceholderName(name);
+  return (
+    <div className={`team-name ${dim ? 'dim' : ''} ${winner ? 'winner' : ''}`}>
+      {venc ? (
+        <>
+          <span className="team-name-screen">{name}</span>
+          <span className="team-name-print-await">Aguardando</span>
+        </>
+      ) : (
+        name
+      )}
+    </div>
+  );
+}
+
 function MatchCardContent({ match }: { match: EvaluatedMatch }) {
   const leftWin = match.winnerChoice === '1';
   const rightWin = match.winnerChoice === '2';
@@ -33,18 +74,14 @@ function MatchCardContent({ match }: { match: EvaluatedMatch }) {
     <>
       <div className="team-line">
         <RenderFlag entrant={match.left} />
-        <div className={`team-name ${!match.left.clubId ? 'dim' : ''} ${leftWin ? 'winner' : ''}`}>
-          {match.left.name}
-        </div>
+        <TeamNameCell name={match.left.name} dim={!match.left.clubId} winner={leftWin} />
         <div className={`score ${leftWin ? 'win' : ''}`}>
           {match.playable ? match.saved.score1 : ''}
         </div>
       </div>
       <div className="team-line">
         <RenderFlag entrant={match.right} />
-        <div className={`team-name ${!match.right.clubId ? 'dim' : ''} ${rightWin ? 'winner' : ''}`}>
-          {match.right.name}
-        </div>
+        <TeamNameCell name={match.right.name} dim={!match.right.clubId} winner={rightWin} />
         <div className={`score ${rightWin ? 'win' : ''}`}>
           {match.playable ? match.saved.score2 : ''}
         </div>
@@ -104,9 +141,11 @@ export function BracketView({ rounds, kind, scopeKey, finalTitle, finalPlace, is
   const hasSecondaryPlace = kind === 'dispute' && !!finalPlace;
   const secondaryPlace = hasSecondaryPlace ? finalPlace + 1 : 0;
   const secondaryName = hasSecondaryPlace
-    ? (finalMatch.loserClubId
-      ? (finalMatch.winnerChoice === '1' ? finalMatch.right.name : finalMatch.left.name)
-      : 'Aguardando resultado')
+    ? finalMatch.loserClubId
+      ? finalMatch.winnerChoice === '1'
+        ? finalMatch.right.name
+        : finalMatch.left.name
+      : 'Aguardando resultado'
     : '';
 
   return (
@@ -157,11 +196,15 @@ export function BracketView({ rounds, kind, scopeKey, finalTitle, finalPlace, is
         style={{ left: finalPos.x + layout.cardW + 52, top: finalPos.y - 6 }}
       >
         <div className="kicker">{finalTitle || 'Resultado final'}</div>
-        <div className="champ">{championName}</div>
+        <div className="champ">
+          <PrintSwapVencName text={championName} />
+        </div>
         <div className="place">{placementText}</div>
         {hasSecondaryPlace && (
           <div className="runner-up">
-            <div className="runner-up-name">{secondaryName}</div>
+            <div className="runner-up-name">
+              <PrintSwapVencName text={secondaryName} />
+            </div>
             <div className="runner-up-place">{secondaryPlace}º Lugar</div>
           </div>
         )}
