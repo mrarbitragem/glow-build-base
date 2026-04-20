@@ -290,6 +290,9 @@ function resolveCanonicalChaveCategoryId(requested: Set<string>, rawFromServer: 
   let k = String(rawFromServer).trim();
   if (!k) return null;
   if (requested.has(k)) return k;
+  /** BD / JSON por vezes usa maiúsculas (`C`) e a app usa `c`. */
+  const lower = k.toLowerCase();
+  if (lower !== k && requested.has(lower)) return lower;
   try {
     if (k.includes('%')) {
       const dec = decodeURIComponent(k);
@@ -515,7 +518,7 @@ function matchResultsFromPatch(patch: ChaveLoadPayload): Record<string, MatchSta
   const out: Record<string, MatchState> = {};
   for (const [k, v] of Object.entries(mr)) {
     if (!v || typeof v !== 'object') continue;
-    out[k] = matchStateFromRow(v as Record<string, unknown>);
+    out[k] = matchStateFromRow(v as unknown as Record<string, unknown>);
   }
   return out;
 }

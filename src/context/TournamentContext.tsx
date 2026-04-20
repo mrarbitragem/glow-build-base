@@ -17,8 +17,11 @@ import { normalizeClubFlagSrc } from '@/utils/clubFlag';
 
 const PLACEMENT_PREF_KEY = 'interclubes-show-positions';
 
-/** Após `select_club`, só pedir `chave` a estas categorias (evita lote grande no n8n). */
-const CHAVE_IDS_AFTER_CLUB_SYNC: readonly string[] = ['40+', 'd', 'iniciante', '50', 'sub-12', '60'];
+/**
+ * Após `select_club`, pedir `load_chave` em lote só a estas categorias (menos carga no n8n).
+ * A `c` estava de fora: após o sync de clubes a chave C nunca fundia com a BD até mudar de separador.
+ */
+const CHAVE_IDS_AFTER_CLUB_SYNC: readonly string[] = ['40+', 'c', 'd', 'iniciante', '50', 'sub-12', '60'];
 
 function defaultCategoryIdOnBoot(): string {
   const s = loadState();
