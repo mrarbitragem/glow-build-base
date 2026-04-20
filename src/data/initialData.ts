@@ -130,8 +130,8 @@ export const CATEGORY_FIXED_BYE_ONE_BASED: Partial<Record<string, readonly numbe
 
 export const INITIAL_DATA: TournamentState = {
   event: {
-    title: "4º Interclubes de Beach Tennis FBT",
-    local: "VAMO, Brasília - DF",
+    title: "5º Interclubes de Beach Tennis FBT",
+    local: "Arena BRB, Brasília - DF",
     arbitroGeral: "Marciel Ribeiro"
   },
   pointsByPlace: {
