@@ -887,6 +887,16 @@
 .login h2 { margin: 0 0 8px; }
 .login p { margin: 0 0 16px; color: hsl(var(--muted-foreground)); }
 .error { color: hsl(var(--destructive)); font-size: 0.88rem; }
+.admin-pending-notice {
+  font-size: 0.88rem;
+  line-height: 1.45;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid hsl(var(--warning) / 35%);
+  background: hsl(var(--warning) / 10%);
+  color: hsl(var(--foreground));
+}
+.admin-pending-notice strong { color: hsl(var(--warning)); }
 
 /* Round schedule */
 .round-schedule-list { display: grid; gap: 10px; }

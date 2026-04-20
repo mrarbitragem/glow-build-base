@@ -131,6 +131,16 @@ export function parseClubsWebhookPayload(data: unknown): ClubsWebhookResult {
   };
 }
 
+async function parseJsonBodySafely(res: Response): Promise<unknown> {
+  const raw = await res.text();
+  if (!raw.trim()) return [];
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    throw new Error('Resposta inválida do servidor de clubes (JSON malformado).');
+  }
+}
+
 export async function fetchClubsFromWebhook(): Promise<ClubsWebhookResult> {
   const url = getClubsWebhookUrl();
   let res: Response;
@@ -150,6 +160,6 @@ export async function fetchClubsFromWebhook(): Promise<ClubsWebhookResult> {
   if (!res.ok) {
     throw new Error(`Falha ao buscar clubes (${res.status}).`);
   }
-  const data: unknown = await res.json();
+  const data = await parseJsonBodySafely(res);
   return parseClubsWebhookPayload(data);
 }

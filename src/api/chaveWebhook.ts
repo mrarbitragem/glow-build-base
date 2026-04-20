@@ -52,6 +52,34 @@ export function dedupeClubSeeds(seeds: (string | null)[]): (string | null)[] {
   });
 }
 
+async function parseJsonBodySafely(
+  res: Response,
+  opts?: { emptyFallback?: unknown; invalidJsonMessage?: string }
+): Promise<unknown> {
+  const raw = await res.text();
+  if (!raw.trim()) return opts?.emptyFallback ?? {};
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    throw new Error(opts?.invalidJsonMessage ?? 'Resposta inválida do servidor (JSON malformado).');
+  }
+}
+
+function extractWebhookErrorMessage(raw: string): string {
+  const txt = raw.trim();
+  if (!txt) return '';
+  try {
+    const data = JSON.parse(txt) as Record<string, unknown>;
+    const parts = [data.message, data.error, data.hint]
+      .filter(v => typeof v === 'string' && v.trim().length > 0)
+      .map(v => String(v).trim());
+    if (parts.length > 0) return parts.join(' ');
+  } catch {
+    /* noop */
+  }
+  return txt.length > 260 ? `${txt.slice(0, 260)}...` : txt;
+}
+
 const DEFAULT_LOAD = 'https://webhook.mrarbitragem.com.br/webhook/chave';
 const DEFAULT_SAVE = 'https://webhook.mrarbitragem.com.br/webhook/save_chave';
 const DEV_LOAD = '/api/webhook-chave';
@@ -384,7 +412,12 @@ async function fetchChaveCategoriesBulk(categoriaIds: readonly string[]): Promis
     return {};
   }
   if (!res.ok) return {};
-  const data: unknown = await res.json();
+  let data: unknown;
+  try {
+    data = await parseJsonBodySafely(res, { emptyFallback: {} });
+  } catch {
+    return {};
+  }
   return parseChaveBulkResponse(data, ids);
 }
 
@@ -463,7 +496,10 @@ export async function fetchChaveCategory(categoriaId: string): Promise<ChaveLoad
   if (!res.ok) {
     throw new Error(`Falha ao carregar chave (${res.status}).`);
   }
-  const data: unknown = await res.json();
+  const data = await parseJsonBodySafely(res, {
+    emptyFallback: {},
+    invalidJsonMessage: 'Resposta inválida do webhook chave (JSON malformado).',
+  });
   let patch = parseChaveLoadResponse(data);
   /** Alguns fluxos n8n devolvem o mesmo envelope `{ chaves: { … } }` no POST com um só `categoriaId`. */
   if (!chavePatchHasData(patch) && data && typeof data === 'object' && data !== null && 'chaves' in data) {
@@ -500,7 +536,13 @@ export async function saveChaveCategory(payload: ChaveSavePayload): Promise<void
     throw new Error('Rede ou CORS ao gravar a chave.');
   }
   if (!res.ok) {
-    throw new Error(`Falha ao gravar chave (${res.status}).`);
+    let details = '';
+    try {
+      details = extractWebhookErrorMessage(await res.text());
+    } catch {
+      details = '';
+    }
+    throw new Error(details ? `Falha ao gravar chave (${res.status}): ${details}` : `Falha ao gravar chave (${res.status}).`);
   }
 }
 

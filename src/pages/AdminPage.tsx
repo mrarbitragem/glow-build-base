@@ -21,7 +21,7 @@ function AdminSidebar() {
     setAdminPanel,
     setAdminMode,
     updateEvent,
-    setSlotClub,
+    saveCategorySeeds,
     addClub,
     editClub,
     changeClubFlag,
@@ -35,6 +35,7 @@ function AdminSidebar() {
     reloadChaveFromServer,
     reloadAllChavesAfterOfficialDraw,
     refreshClubsFromWebhook,
+    clearAllChavesForSorteio,
   } = useTournament();
   const category = getCategory(ui.categoryId);
   const clubNameRef = useRef<HTMLInputElement>(null);
@@ -43,6 +44,12 @@ function AdminSidebar() {
   const [clubsRemoteError, setClubsRemoteError] = useState<string | null>(null);
   const [chaveSyncBusy, setChaveSyncBusy] = useState(false);
   const [chaveSyncError, setChaveSyncError] = useState<string | null>(null);
+  const [sorteioClearBusy, setSorteioClearBusy] = useState(false);
+  const [sorteioClearError, setSorteioClearError] = useState<string | null>(null);
+  const [categoryDraftSeeds, setCategoryDraftSeeds] = useState<(string | null)[]>(category.seeds);
+  const [categorySaveBusy, setCategorySaveBusy] = useState(false);
+  const [categorySaveError, setCategorySaveError] = useState<string | null>(null);
+  const [categorySaveOk, setCategorySaveOk] = useState<string | null>(null);
 
   const handleReloadChaveThis = async (afterOfficialDraw: boolean) => {
     const label = category.name;
@@ -62,6 +69,44 @@ function AdminSidebar() {
       setChaveSyncError(e instanceof Error ? e.message : 'Não foi possível recarregar a chave.');
     } finally {
       setChaveSyncBusy(false);
+    }
+  };
+
+  const handleClearAllChavesLocal = async () => {
+    if (
+      !confirm(
+        'Limpar todas as chaves neste navegador? Posições de clube ficam vazias (BYEs fixos mantidos) e apagam-se resultados e horários de rodada em todas as categorias.'
+      )
+    ) {
+      return;
+    }
+    setSorteioClearBusy(true);
+    setSorteioClearError(null);
+    try {
+      await clearAllChavesForSorteio({ saveToServer: false });
+    } catch (e) {
+      setSorteioClearError(e instanceof Error ? e.message : 'Não foi possível limpar as chaves.');
+    } finally {
+      setSorteioClearBusy(false);
+    }
+  };
+
+  const handleClearAllChavesAndServer = async () => {
+    if (
+      !confirm(
+        'Gravar chaves vazias em TODAS as categorias no servidor (save_chave) e limpar o estado local? Isto apaga posições, resultados e horários de rodada na base, para abrir ao sorteio.'
+      )
+    ) {
+      return;
+    }
+    setSorteioClearBusy(true);
+    setSorteioClearError(null);
+    try {
+      await clearAllChavesForSorteio({ saveToServer: true });
+    } catch (e) {
+      setSorteioClearError(e instanceof Error ? e.message : 'Não foi possível gravar as chaves vazias.');
+    } finally {
+      setSorteioClearBusy(false);
     }
   };
 
@@ -102,6 +147,56 @@ function AdminSidebar() {
   }, [ui.adminPanel, loadClubsFromServer]);
 
   const struct = evaluateStructure(category, state.clubs);
+  const categorySeedsDirty =
+    categoryDraftSeeds.length !== category.seeds.length ||
+    categoryDraftSeeds.some((seed, idx) => seed !== category.seeds[idx]);
+
+  useEffect(() => {
+    setCategoryDraftSeeds([...category.seeds]);
+    setCategorySaveError(null);
+    setCategorySaveOk(null);
+  }, [category.id, category.seeds]);
+
+  const handleDraftSlotChange = (idx: number, clubId: string) => {
+    const trimmed = (clubId || '').trim();
+    setCategoryDraftSeeds(prev => {
+      const seeds = [...prev];
+      if (seeds[idx] === null) return seeds;
+      const currentAtIdx = seeds[idx];
+      if (trimmed) {
+        const existingIdx = seeds.findIndex((seed, j) => j !== idx && seed === trimmed);
+        if (existingIdx >= 0) {
+          seeds[existingIdx] = typeof currentAtIdx === 'string' ? currentAtIdx : '';
+        }
+      }
+      seeds[idx] = trimmed || '';
+      return seeds;
+    });
+    setCategorySaveError(null);
+    setCategorySaveOk(null);
+  };
+
+  const handleSaveCategorySeeds = async () => {
+    setCategorySaveBusy(true);
+    setCategorySaveError(null);
+    setCategorySaveOk(null);
+    try {
+      await saveCategorySeeds(category.id, categoryDraftSeeds);
+      setCategorySaveOk('Posições enviadas com sucesso.');
+    } catch (e) {
+      setCategorySaveError(e instanceof Error ? e.message : 'Não foi possível enviar as posições.');
+    } finally {
+      setCategorySaveBusy(false);
+    }
+  };
+
+  const handleDiscardCategoryDraft = () => {
+    if (!categorySeedsDirty) return;
+    if (!confirm('Descartar as alterações nesta categoria e voltar ao que está salvo?')) return;
+    setCategoryDraftSeeds([...category.seeds]);
+    setCategorySaveError(null);
+    setCategorySaveOk(null);
+  };
 
   // Collect visible rounds for schedule manager
   const scheduleMatches: EvaluatedMatch[] = [];
@@ -243,6 +338,39 @@ function AdminSidebar() {
           </div>
 
           <div className="field">
+            <label className="label">Preparar publicação (sorteio)</label>
+            <div className="helper">
+              Limpa <strong>todas as categorias</strong>: só vagas vazias (mantém BYEs fixos de cada chave), zera
+              <strong> resultados</strong> e <strong>horários de rodada</strong> na app e (com o 2.º botão) em
+              <code> categoria_chave</code>. Se após F5 ainda aparecerem placares antigos, a tabela
+              <code> jogo</code> ainda tem registos; apague ou zere aí para um sorteio totalmente limpo.
+            </div>
+            <div className="footer-actions" style={{ flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn secondary small"
+                disabled={sorteioClearBusy}
+                onClick={() => void handleClearAllChavesLocal()}
+              >
+                {sorteioClearBusy ? 'A processar…' : 'Só limpar (este navegador)'}
+              </button>
+              <button
+                type="button"
+                className="btn small"
+                disabled={sorteioClearBusy}
+                onClick={() => void handleClearAllChavesAndServer()}
+              >
+                {sorteioClearBusy ? 'A processar…' : 'Limpar e gravar no servidor'}
+              </button>
+            </div>
+            {sorteioClearError && (
+              <div className="error" role="alert" style={{ marginTop: 8 }}>
+                {sorteioClearError}
+              </div>
+            )}
+          </div>
+
+          <div className="field">
             <label className="label">Chaves de posição (público + agenda)</label>
             <div className="round-schedule-item" style={{ alignItems: 'center', gap: 8 }}>
               <input
@@ -354,13 +482,22 @@ function AdminSidebar() {
             Nesta categoria, você só resgata clubes do cadastro central.
             «Definir clube…» são vagas do sorteio; «BYE (fixo na chave)» reproduce o tamanho da chave (quantidade de clubes que você definiu). Cada clube só pode ocupar uma posição — não é possível repetir o mesmo time na categoria (evita enfrentar a si mesmo).
           </div>
+          <div className="helper">
+            Altere as posições livremente e use «Enviar posições da chave» no final para gravar tudo de uma vez.
+          </div>
           <div className="field">
             <label className="label">Categoria em edição</label>
             <input className="input" disabled value={category.name} />
           </div>
+          {categorySeedsDirty && (
+            <div className="admin-pending-notice" role="status" aria-live="polite">
+              <strong>Alterações pendentes</strong> — a chave ainda não foi enviada ao servidor. Preencha as posições
+              e clique em «Enviar posições da chave» ou desfaça.
+            </div>
+          )}
           <div className="slot-grid">
             {Array.from({ length: category.slots }).map((_, idx) => {
-              const raw = category.seeds[idx];
+              const raw = categoryDraftSeeds[idx];
               const isFixedBye = raw === null;
               const clubId = typeof raw === 'string' ? raw : '';
               return (
@@ -374,11 +511,11 @@ function AdminSidebar() {
                     <select
                       className="select"
                       value={clubId}
-                      onChange={e => setSlotClub(category.id, idx, e.target.value)}
+                      onChange={e => handleDraftSlotChange(idx, e.target.value)}
                     >
                       <option value="">Definir clube…</option>
                       {state.clubs.map(club => {
-                        const usedElsewhere = category.seeds.some(
+                        const usedElsewhere = categoryDraftSeeds.some(
                           (seed, si) => si !== idx && typeof seed === 'string' && seed === club.id
                         );
                         const disabled = usedElsewhere && club.id !== clubId;
@@ -395,6 +532,30 @@ function AdminSidebar() {
               );
             })}
           </div>
+          <div className="footer-actions">
+            <button
+              type="button"
+              className="btn"
+              disabled={categorySaveBusy || !categorySeedsDirty}
+              onClick={() => void handleSaveCategorySeeds()}
+            >
+              {categorySaveBusy ? 'Enviando…' : 'Enviar posições da chave'}
+            </button>
+            <button
+              type="button"
+              className="btn secondary"
+              disabled={categorySaveBusy || !categorySeedsDirty}
+              onClick={handleDiscardCategoryDraft}
+            >
+              Desfazer alterações
+            </button>
+          </div>
+          {categorySaveError && (
+            <div className="error" role="alert">{categorySaveError}</div>
+          )}
+          {categorySaveOk && (
+            <div className="helper">{categorySaveOk}</div>
+          )}
         </div>
       )}
     </div>

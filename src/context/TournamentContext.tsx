@@ -10,7 +10,7 @@ import {
   dedupeClubSeeds,
   saveChaveCategory,
 } from '@/api/chaveWebhook';
-import { INITIAL_DATA, STORAGE_KEY } from '@/data/initialData';
+import { INITIAL_DATA, STORAGE_KEY, buildEmptySeedsForDraw } from '@/data/initialData';
 import { countRealSeeds } from '@/utils/bracketEngine';
 import { deepClone, slugify, fileToDataUrl } from '@/utils/helpers';
 import { normalizeClubFlagSrc } from '@/utils/clubFlag';
@@ -175,6 +175,7 @@ interface TournamentContextType {
   clearMatch: (categoryId: string, matchId: string) => void;
   setRoundDefault: (categoryId: string, scheduleKey: string, value: string) => void;
   setSlotClub: (categoryId: string, idx: number, clubId: string) => void;
+  saveCategorySeeds: (categoryId: string, seeds: (string | null)[]) => Promise<void>;
   addClub: (name: string, flag: string) => void;
   replaceClubs: (clubs: Club[]) => void;
   editClub: (id: string, newName: string) => void;
@@ -190,6 +191,11 @@ interface TournamentContextType {
   reloadAllChavesAfterOfficialDraw: () => Promise<void>;
   /** Busca clubes no n8n, atualiza estado e funde chaves (ver `CHAVE_IDS_AFTER_CLUB_SYNC`) com o load_chave. */
   refreshClubsFromWebhook: () => Promise<void>;
+  /**
+   * Todas as categorias: chave vazia (BYEs fixos mantidos), sem resultados nem horários de rodada.
+   * Opcionalmente grava cada categoria no `save_chave` (n8n/MySQL).
+   */
+  clearAllChavesForSorteio: (opts?: { saveToServer?: boolean }) => Promise<void>;
 }
 
 const TournamentContext = createContext<TournamentContextType | null>(null);
@@ -223,6 +229,9 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
   const refreshClubsFromWebhook = useCallback(async () => {
     const myGen = ++clubsSyncGenRef.current;
     const remote = await fetchClubsFromWebhook();
+    if (!remote.clubs.length) {
+      throw new Error('Servidor de clubes respondeu sem registros.');
+    }
     if (clubsSyncGenRef.current !== myGen) return;
     const prev = stateRef.current;
     const next = remote.clubs
@@ -532,18 +541,17 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     updateState(s => {
       const cat = s.categories.find(c => c.id === categoryId);
       if (!cat) return s;
-      if (trimmed) {
-        const dup = cat.seeds.some((seed, j) => j !== idx && seed === trimmed);
-        if (dup) {
-          queueMicrotask(() =>
-            alert('Este clube já está em outra posição nesta categoria. Libere a posição anterior ou escolha outro clube.')
-          );
-          return s;
-        }
-      }
       const cats = s.categories.map(c => {
         if (c.id !== categoryId) return c;
         const seeds = [...c.seeds];
+        const currentAtIdx = seeds[idx];
+        if (trimmed) {
+          const existingIdx = seeds.findIndex((seed, j) => j !== idx && seed === trimmed);
+          if (existingIdx >= 0) {
+            // Permite reorganizar a chave cheia sem limpar slot antes: troca as posições.
+            seeds[existingIdx] = typeof currentAtIdx === 'string' ? currentAtIdx : '';
+          }
+        }
         seeds[idx] = trimmed || '';
         return { ...c, seeds };
       });
@@ -560,6 +568,31 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       return { ...s, categories: cats };
     });
   }, [updateState]);
+
+  const saveCategorySeeds = useCallback(async (categoryId: string, seeds: (string | null)[]) => {
+    const current = stateRef.current;
+    const cat = current.categories.find(c => c.id === categoryId);
+    if (!cat) throw new Error('Categoria não encontrada.');
+
+    const nextSeeds = cat.seeds.map((seed, idx) => {
+      if (seed === null) return null;
+      const raw = seeds[idx];
+      return typeof raw === 'string' ? raw.trim() : '';
+    });
+
+    await saveChaveCategory({
+      categoriaId: categoryId,
+      seeds: [...nextSeeds],
+      roundDefaults: { ...cat.roundDefaults },
+    });
+
+    setState(prev => {
+      const cats = prev.categories.map(c => (c.id === categoryId ? { ...c, seeds: [...nextSeeds] } : c));
+      const next = { ...prev, categories: cats };
+      saveState(next);
+      return next;
+    });
+  }, []);
 
   const replaceClubs = useCallback((clubs: Club[]) => {
     const next = clubs.map(c => ({
@@ -664,14 +697,53 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     setState(acc);
   }, []);
 
+  const clearAllChavesForSorteio = useCallback(async (opts?: { saveToServer?: boolean }) => {
+    const base = stateRef.current;
+    const next: TournamentState = {
+      ...base,
+      categories: base.categories.map(cat => ({
+        ...cat,
+        seeds: buildEmptySeedsForDraw(cat.id, cat.slots),
+        matchResults: {},
+        roundDefaults: {},
+        importedPlacements: [],
+      })),
+    };
+    saveState(next);
+    setState(next);
+
+    if (opts?.saveToServer) {
+      const failed: { id: string; message: string }[] = [];
+      for (const cat of next.categories) {
+        try {
+          await saveChaveCategory({
+            categoriaId: cat.id,
+            seeds: [...cat.seeds],
+            roundDefaults: {},
+          });
+        } catch (e) {
+          failed.push({
+            id: cat.id,
+            message: e instanceof Error ? e.message : String(e),
+          });
+        }
+      }
+      if (failed.length > 0) {
+        const detail = failed.map(f => `${f.id}: ${f.message}`).join(' | ');
+        throw new Error(`Falha ao gravar no servidor (algumas categorias): ${detail}`);
+      }
+    }
+  }, []);
+
   return (
     <TournamentContext.Provider value={{
       state, ui, setPage, setCategory, setAdminPanel, setAdminMode, setShowPlacementBrackets,
       selectMatch, openMatchModal, closeMatchModal, doLogin, logout, setShowLogin,
       updateEvent, setMatchPatch, clearAllMatchesInProgress, clearMatch, setRoundDefault, setSlotClub,
+      saveCategorySeeds,
       addClub, replaceClubs, editClub, changeClubFlag, removeClub, exportBackup, importBackup, resetAll, getCategory,
       reloadChaveFromServer, reloadAllChavesAfterOfficialDraw,
-      refreshClubsFromWebhook,
+      refreshClubsFromWebhook, clearAllChavesForSorteio,
     }}>
       {children}
     </TournamentContext.Provider>
