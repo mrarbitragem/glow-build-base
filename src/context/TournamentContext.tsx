@@ -25,8 +25,6 @@ const CHAVE_IDS_AFTER_CLUB_SYNC: readonly string[] = ['40+', 'c', 'd', 'iniciant
 
 function defaultCategoryIdOnBoot(): string {
   const s = loadState();
-  /** Abre 40+ se existir em `categories` — não depender só de `categoryOrder` persistido (muitas vezes sem «40+»). */
-  if (s.categories.some(c => c.id === '40+')) return '40+';
   const ids = s.categoryOrder?.length ? s.categoryOrder : s.categories.map(c => c.id);
   return ids[0] ?? 'profissional';
 }
