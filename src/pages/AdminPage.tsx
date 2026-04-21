@@ -150,6 +150,19 @@ function AdminSidebar() {
   const categorySeedsDirty =
     categoryDraftSeeds.length !== category.seeds.length ||
     categoryDraftSeeds.some((seed, idx) => seed !== category.seeds[idx]);
+  const slotR1GameByIndex = (() => {
+    const out = new Map<number, number>();
+    let game = 0;
+    for (let i = 0; i < category.slots; i += 2) {
+      const a = categoryDraftSeeds[i];
+      const b = categoryDraftSeeds[i + 1];
+      if (a === null || b === null) continue;
+      game += 1;
+      out.set(i, game);
+      out.set(i + 1, game);
+    }
+    return out;
+  })();
 
   useEffect(() => {
     setCategoryDraftSeeds([...category.seeds]);
@@ -528,6 +541,9 @@ function AdminSidebar() {
                       })}
                     </select>
                   )}
+                  {slotR1GameByIndex.has(idx) && (
+                    <div className="helper">Jogo {slotR1GameByIndex.get(idx)}</div>
+                  )}
                 </div>
               );
             })}
@@ -567,7 +583,7 @@ function AdminCanvas() {
   const category = getCategory(ui.categoryId);
   const struct = evaluateStructure(category, state.clubs);
   const bNinthPlayoffBlock =
-    category.id === 'b' || category.id === '60'
+    category.id === 'b'
       ? struct.placementBlocks.find(b => b.key.includes('place-b9-playoff'))
       : undefined;
   const c911PlayoffBlock =
@@ -578,7 +594,9 @@ function AdminCanvas() {
     ? struct.placementBlocks.find(b => b.key.includes('place-d9-12-playoff'))
     : undefined;
   const sub12FiveSixBlock =
-    category.id === 'sub-12' ? struct.placementBlocks.find(b => b.key.includes('place-sub12-5-6-playoff')) : undefined;
+    category.id === 'sub-12' || category.id === 'sub-16'
+      ? struct.placementBlocks.find(b => b.key.includes(`place-${category.id}-5-8-playoff`))
+      : undefined;
   const filteredPlacementBlocks = struct.placementBlocks.filter(
     b =>
       b.startPlace >= 3 &&

@@ -22,15 +22,17 @@ export function DisputasPage() {
           <h1>Categoria {category.name}</h1>
           {ui.showPlacementBrackets && (
             <p className="helper dispute-intro">
-              {category.id === 'sub-12' ? (
+              {category.id === 'sub-12' || category.id === 'sub-16' ? (
                 <>
-                  Na <strong>Sub 12</strong> (6 clubes em chave de 8), os <strong>BYE</strong> fixos estão nas posições{' '}
-                  <strong>2</strong> e <strong>7</strong> do sorteio. O bloco <strong>5º e 6º</strong> é{' '}
-                  <strong>perdedor do Jogo 1 × perdedor do Jogo 2</strong> (primeiro e segundo confrontos jogáveis da 1ª
-                  rodada). Mantém-se a disputa de <strong>3º e 4º</strong> entre perdedores das meias-finais.
+                  Na categoria <strong>{category.name}</strong> (7 clubes em chave de 8), há <strong>BYE</strong> fixo só na posição{' '}
+                  <strong>2</strong> do sorteio. O bloco <strong>5º ao 8º</strong> usa os três primeiros confrontos jogáveis
+                  da 1ª rodada da principal: <strong>perdedor do Jogo 1 × BYE</strong> e{' '}
+                  <strong>perdedor do Jogo 2 × perdedor do Jogo 3</strong>. A final da mini define <strong>5º e 6º</strong>; o{' '}
+                  <strong>7º lugar</strong> é o <strong>perdedor do jogo 7</strong>. Mantém-se a disputa de{' '}
+                  <strong>3º e 4º</strong> entre perdedores das meias-finais.
                 </>
               ) : categorySkipsNineThroughSixteenPlacement(category.id) ? (
-                category.id === 'b' || category.id === '60' ? (
+                category.id === 'b' ? (
                   <>
                     Na categoria <strong>{category.name}</strong> (10 clubes), o <strong>9º lugar</strong> é decidido na
                     disputa entre o <strong>perdedor do Jogo 1</strong> e o <strong>perdedor do Jogo 2</strong> (dois
@@ -59,7 +61,7 @@ export function DisputasPage() {
                   </>
                 ) : (
                   <>
-                    Nas categorias <strong>A</strong> e <strong>Sub 18</strong> (9 clubes em chave de 16), o{' '}
+                    Nas categorias <strong>A</strong>, <strong>Sub 14</strong> e <strong>60+</strong> (9 clubes em chave de 16), o{' '}
                     <strong>9º lugar</strong> é o <strong>perdedor do jogo 1</strong>. Mantém-se a disputa de{' '}
                     <strong>5º a 8º</strong> entre perdedores das quartas, e as faixas acima conforme a chave.
                   </>

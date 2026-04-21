@@ -49,10 +49,11 @@ export function categoryHasTwelveClubNineToTwelvePlayoff(categoryId: string): bo
   return categoryId === 'd' || categoryId === 'iniciante' || categoryId === '50';
 }
 
-/** Sem mini-chave de perdedores da R1 (faixa 9–16): A e Sub 18 (9 clubes), B (10), C e 40+ (11 — mini 9–11), D / Iniciante / 50+ (12 — mini 9–12 dedicada). */
+/** Sem mini-chave de perdedores da R1 (faixa 9–16): A e Sub 14 (9 clubes), B (10), C e 40+ (11 — mini 9–11), D / Iniciante / 50+ (12 — mini 9–12 dedicada). */
 const CATEGORIES_SKIP_MAIN_R1_PLACEMENT_BLOCK = new Set([
   'a',
-  'sub-18',
+  'sub-14',
+  '60',
   'b',
   '60',
   'c',
@@ -62,9 +63,9 @@ const CATEGORIES_SKIP_MAIN_R1_PLACEMENT_BLOCK = new Set([
   '50',
 ]);
 
-/** Quantos lugares vêm direto do 1º jogo jogável da R1 (só A e Sub 18). Na B, 9º/10º saem da disputa entre perd. JOGO 1 e JOGO 2. */
+/** Quantos lugares vêm direto do 1º jogo jogável da R1 (A, Sub 14 e 60+). Na B, 9º/10º saem da disputa entre perd. JOGO 1 e JOGO 2. */
 function directLowerPlaceSlotsFromR1Count(categoryId: string): number {
-  if (categoryId === 'a' || categoryId === 'sub-18') return 1;
+  if (categoryId === 'a' || categoryId === 'sub-14' || categoryId === '60') return 1;
   return 0;
 }
 
@@ -224,12 +225,13 @@ export function evaluateStructure(category: Category, clubs: Club[]): StructureR
     const loserPotential = playable ? 1 : 0;
     const winnerClubId = winnerChoice === '1' && left.clubId ? left.clubId : winnerChoice === '2' && right.clubId ? right.clubId : '';
     const loserClubId = winnerChoice === '1' && right.clubId ? right.clubId : winnerChoice === '2' && left.clubId ? left.clubId : '';
-    const shortCode = `M${matchId.split('-').pop()?.replace('m', '')}`;
+    const shortCode = `J${matchId.split('-').pop()?.replace('m', '')}`;
+    const code = playable ? `J${++gameCounter}` : '';
     const evaluated: EvaluatedMatch = {
       ...def,
       saved,
       left, right, playable, winnerPotential, loserPotential, winnerChoice, winnerClubId, loserClubId,
-      code: '', shortCode,
+      code, shortCode: code || shortCode,
       effectiveDate: getMatchEffectiveDate(category, def)
     };
     cache[matchId] = evaluated;
@@ -237,17 +239,6 @@ export function evaluateStructure(category: Category, clubs: Club[]): StructureR
   }
 
   const mainMatches = mainRounds.map(round => round.map(def => evaluateMatch(def.id)));
-
-  mainMatches.forEach(round => {
-    round.forEach(match => {
-      if (match.playable) {
-        gameCounter += 1;
-        match.code = `JOGO${gameCounter}`;
-      } else {
-        match.code = '';
-      }
-    });
-  });
 
   const staticByeEntryRef: MatchRef = {
     type: 'entry',
@@ -330,11 +321,13 @@ export function evaluateStructure(category: Category, clubs: Club[]): StructureR
       const winnerChoice = inferWinner(saved, left, right, playable);
       const winnerPotential = (left.potential > 0 || right.potential > 0) ? 1 : 0;
       const loserPotential = playable ? 1 : 0;
+      const shortCode = `J${id.split('-').pop()?.replace('m', '') || ''}`;
+      const code = playable ? `J${++gameCounter}` : '';
       const m: EvaluatedMatch = {
         ...def, left, right, playable, winnerPotential, loserPotential, winnerChoice,
         winnerClubId: winnerChoice === '1' && left.clubId ? left.clubId : winnerChoice === '2' && right.clubId ? right.clubId : '',
         loserClubId: winnerChoice === '1' && right.clubId ? right.clubId : winnerChoice === '2' && left.clubId ? left.clubId : '',
-        shortCode: '', code: '', saved,
+        shortCode: code || shortCode, code, saved,
         effectiveDate: getMatchEffectiveDate(category, def)
       };
       localCache[id] = m;
@@ -342,18 +335,6 @@ export function evaluateStructure(category: Category, clubs: Club[]): StructureR
     }
 
     const evalRounds = rounds.map(round => round.map(def => localMatch(def.id)));
-    evalRounds.forEach(round => {
-      round.forEach(match => {
-        if (match.playable) {
-          gameCounter += 1;
-          match.code = `JOGO${gameCounter}`;
-          match.shortCode = match.code;
-        } else {
-          match.code = '';
-          match.shortCode = match.id.split('-').pop()?.toUpperCase() || '';
-        }
-      });
-    });
 
     const childBlocks: BlockResult[] = [];
     if (!block.skipLoserChildren) {
@@ -437,10 +418,9 @@ export function evaluateStructure(category: Category, clubs: Club[]): StructureR
   const skipNineThroughSixteenBlock = CATEGORIES_SKIP_MAIN_R1_PLACEMENT_BLOCK.has(category.id);
 
   /**
-   * B e 60+ (10 clubes em 16): disputa 9º entre perdedores dos dois primeiros pares «só clubes» da R1 (= JOGO1 e JOGO2).
-   * Usa o mapa de BYE fixo da categoria (`BYE_16_B` para ambas).
+   * B (10 clubes em 16): disputa 9º entre perdedores dos dois primeiros pares «só clubes» da R1 (= JOGO1 e JOGO2).
    */
-  if ((category.id === 'b' || category.id === '60') && slots === 16) {
+  if (category.id === 'b' && slots === 16) {
     const byes = CATEGORY_FIXED_BYE_ONE_BASED[category.id];
     const pair = byes ? firstTwoMainR1MatchNumbersOneBased(byes) : null;
     if (pair) {
@@ -468,7 +448,10 @@ export function evaluateStructure(category: Category, clubs: Club[]): StructureR
    * final = 9º e 10º; 11º = perdedor do jogo 11 (2º jogo da R1 desta mini-chave).
    */
   if ((category.id === 'c' || category.id === '40+') && slots === 16) {
-    const j = firstNPlayableR1Matches(mainMatches, 3);
+    const byeLayout = CATEGORY_FIXED_BYE_ONE_BASED[category.id];
+    const j = byeLayout
+      ? firstNMainR1MatchesSkippingFixedByeSlots(mainMatches, slots, byeLayout, 3)
+      : firstNPlayableR1Matches(mainMatches, 3);
     const m1 = j[0];
     const m2 = j[1];
     const m3 = j[2];
@@ -487,7 +470,13 @@ export function evaluateStructure(category: Category, clubs: Club[]): StructureR
         true
       );
       const r1b = cBlock.rounds[0]?.[1];
-      if (r1b) cBlock.footer11thFromMatchId = r1b.id;
+      if (r1b) {
+        cBlock.footerPlacementFromMatch = {
+          place: 11,
+          matchId: r1b.id,
+          subtitle: 'Perdedor do jogo 11',
+        };
+      }
       placementBlocks.push(cBlock);
     }
   }
@@ -497,7 +486,10 @@ export function evaluateStructure(category: Category, clubs: Club[]): StructureR
    * final = 9º e 10º; 11º e 12º = perdedores dos dois jogos da 1ª rodada desta mini (sub-chave automática).
    */
   if (categoryHasTwelveClubNineToTwelvePlayoff(category.id) && slots === 16) {
-    const j = firstNPlayableR1Matches(mainMatches, 4);
+    const byeLayout = CATEGORY_FIXED_BYE_ONE_BASED[category.id];
+    const j = byeLayout
+      ? firstNMainR1MatchesSkippingFixedByeSlots(mainMatches, slots, byeLayout, 4)
+      : firstNPlayableR1Matches(mainMatches, 4);
     const m1 = j[0];
     const m2 = j[1];
     const m3 = j[2];
@@ -522,37 +514,48 @@ export function evaluateStructure(category: Category, clubs: Club[]): StructureR
   }
 
   /**
-   * Sub 12 (6 clubes em 8): BYE fixos 2 e 7; 5º e 6º = perdedor do Jogo 1 × perdedor do Jogo 2 (2 primeiros jogos jogáveis da R1).
-   * Não se usa a mini geral de perdedores da R1 (4 vagas).
+   * Sub 12/Sub 16 (7 clubes em 8): BYE fixo na posição 2.
+   * Mini 5º–8º: R1 = perd. JOGO1 × BYE | perd. JOGO2 × perd. JOGO3.
+   * Final = 5º e 6º; 7º = perdedor do jogo 7 (2º jogo da R1 desta mini).
    */
-  if (category.id === 'sub-12' && slots === 8) {
-    const byeLayout = CATEGORY_FIXED_BYE_ONE_BASED['sub-12'];
+  if ((category.id === 'sub-12' || category.id === 'sub-16') && slots === 8) {
+    const byeLayout = CATEGORY_FIXED_BYE_ONE_BASED[category.id];
     const j = byeLayout
-      ? firstNMainR1MatchesSkippingFixedByeSlots(mainMatches, slots, byeLayout, 2)
-      : firstNPlayableR1Matches(mainMatches, 2);
+      ? firstNMainR1MatchesSkippingFixedByeSlots(mainMatches, slots, byeLayout, 3)
+      : firstNPlayableR1Matches(mainMatches, 3);
     const m1 = j[0];
     const m2 = j[1];
-    if (m1 && m2) {
-      placementBlocks.push(
-        buildPlacementBlock(
-          'place-sub12-5-6-playoff',
-          [
-            { type: 'loser', matchId: m1.id },
-            { type: 'loser', matchId: m2.id },
-          ],
-          5,
-          undefined,
-          '5º e 6º',
-          true
-        )
+    const m3 = j[2];
+    if (m1 && m2 && m3) {
+      const subBlock = buildPlacementBlock(
+        `place-${category.id}-5-8-playoff`,
+        [
+          { type: 'loser', matchId: m1.id },
+          staticByeEntryRef,
+          { type: 'loser', matchId: m2.id },
+          { type: 'loser', matchId: m3.id },
+        ],
+        5,
+        undefined,
+        '5º ao 8º',
+        true
       );
+      const r1b = subBlock.rounds[0]?.[1];
+      if (r1b) {
+        subBlock.footerPlacementFromMatch = {
+          place: 7,
+          matchId: r1b.id,
+          subtitle: 'Perdedor do jogo 7',
+        };
+      }
+      placementBlocks.push(subBlock);
     }
   }
 
-  const skipSub12R1FullLosersBlock = category.id === 'sub-12' && slots === 8;
+  const skipSubR1FullLosersBlock = (category.id === 'sub-12' || category.id === 'sub-16') && slots === 8;
 
   for (let r = 0; r < mainMatches.length - 1; r++) {
-    if ((skipNineThroughSixteenBlock && r === 0) || (skipSub12R1FullLosersBlock && r === 0)) continue;
+    if ((skipNineThroughSixteenBlock && r === 0) || (skipSubR1FullLosersBlock && r === 0)) continue;
     /** Todas as partidas da rodada na principal — assim a mini-chave de posição existe antes de haver confronto/jogáveis (horários no scheduleKey). */
     const losers = mainMatches[r].map(m => ({ type: 'loser' as const, matchId: m.id }));
     if (losers.length >= 2) {
@@ -578,10 +581,10 @@ export function evaluateStructure(category: Category, clubs: Club[]): StructureR
     if (hasExplicitResult(finalMatch) && finalMatch.winnerClubId) acc.push({ place: block.startPlace, clubId: finalMatch.winnerClubId });
     if (hasExplicitResult(finalMatch) && finalMatch.loserClubId) acc.push({ place: block.startPlace + 1, clubId: finalMatch.loserClubId });
     block.children.forEach(child => collectBlockPlacements(child, acc));
-    if (block.footer11thFromMatchId) {
-      const m11 = block.rounds.flat().find(x => x.id === block.footer11thFromMatchId);
-      if (m11 && hasExplicitResult(m11) && m11.loserClubId) {
-        acc.push({ place: 11, clubId: m11.loserClubId });
+    if (block.footerPlacementFromMatch) {
+      const footerMatch = block.rounds.flat().find(x => x.id === block.footerPlacementFromMatch?.matchId);
+      if (footerMatch && hasExplicitResult(footerMatch) && footerMatch.loserClubId) {
+        acc.push({ place: block.footerPlacementFromMatch.place, clubId: footerMatch.loserClubId });
       }
     }
   }

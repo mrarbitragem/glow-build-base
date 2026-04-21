@@ -354,6 +354,17 @@
   background: hsl(152 25% 18%);
   color: hsl(152 50% 72%);
 }
+.live-now-clock {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: hsl(var(--foreground));
+  background: hsl(var(--card) / 75%);
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  padding: 10px 14px;
+  align-self: center;
+}
 .live-match-list { display: flex; flex-direction: column; gap: 14px; }
 .live-match-card { padding: 18px 20px; }
 .live-match-category {

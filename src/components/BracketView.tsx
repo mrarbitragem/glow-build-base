@@ -265,22 +265,23 @@ export function BlockView({ block, isAdmin, selectedMatchId, onMatchClick }: Blo
           />
         </div>
       </div>
-      {block.footer11thFromMatchId && (() => {
-        const m = block.rounds.flat().find(x => x.id === block.footer11thFromMatchId);
+      {block.footerPlacementFromMatch && (() => {
+        const m = block.rounds.flat().find(x => x.id === block.footerPlacementFromMatch?.matchId);
         if (!m) return null;
         const loserName =
           m.loserClubId && (m.left.clubId === m.loserClubId ? m.left.name : m.right.clubId === m.loserClubId ? m.right.name : null);
+        const place = block.footerPlacementFromMatch.place;
         return (
           <div className="bracket-section">
             <div className="block-title-strip">
-              <strong>11º lugar</strong>
-              <span>Perdedor do jogo 11</span>
+              <strong>{place}º lugar</strong>
+              <span>{block.footerPlacementFromMatch.subtitle}</span>
             </div>
             <div className="classification">
               <table className="table">
                 <tbody>
                   <tr>
-                    <td className="num">11º</td>
+                    <td className="num">{place}º</td>
                     <td>{loserName || 'Aguardando resultado'}</td>
                   </tr>
                 </tbody>

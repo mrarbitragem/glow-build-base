@@ -3,7 +3,7 @@ import { hasExplicitResult, visibleMatchCode } from '@/utils/bracketEngine';
 import { ClubFlagMedia } from '@/components/ClubFlagMedia';
 
 export interface DirectNinthPlaceCardProps {
-  /** A e Sub 18: um item (9º). Índice 0 → 9º; entradas `null` = ainda não há jogo jogável na R1. */
+  /** A, Sub 14 e 60+: um item (9º). Índice 0 → 9º; entradas `null` = ainda não há jogo jogável na R1. */
   matches: (EvaluatedMatch | null)[];
   clubs: Club[];
   isAdmin?: boolean;

@@ -10,7 +10,7 @@ export function PrincipalPage() {
   const struct = evaluateStructure(category, state.clubs);
   const realClubs = countRealSeeds(category.seeds);
   const bNinthPlayoffBlock =
-    category.id === 'b' || category.id === '60'
+    category.id === 'b'
       ? struct.placementBlocks.find(b => b.key.includes('place-b9-playoff'))
       : undefined;
   const c911PlayoffBlock =
@@ -22,7 +22,9 @@ export function PrincipalPage() {
     ? struct.placementBlocks.find(b => b.key.includes('place-d9-12-playoff'))
     : undefined;
   const sub12FiveSixBlock =
-    category.id === 'sub-12' ? struct.placementBlocks.find(b => b.key.includes('place-sub12-5-6-playoff')) : undefined;
+    category.id === 'sub-12' || category.id === 'sub-16'
+      ? struct.placementBlocks.find(b => b.key.includes(`place-${category.id}-5-8-playoff`))
+      : undefined;
   const positionBlocks = struct.placementBlocks.filter(
     b =>
       b.startPlace >= 3 &&

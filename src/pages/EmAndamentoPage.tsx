@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { useTournament } from '@/context/TournamentContext';
 import { evaluateStructure, collectMatches, visibleMatchCode } from '@/utils/bracketEngine';
 import { ClubFlagMedia } from '@/components/ClubFlagMedia';
@@ -8,6 +8,7 @@ type LiveRow = { categoryId: string; categoryName: string; match: EvaluatedMatch
 
 export function EmAndamentoPage() {
   const { state, ui, reloadChaveFromServer } = useTournament();
+  const [now, setNow] = useState(() => new Date());
 
   /** Ao abrir «Em Andamento», funde `matchResults` do servidor em todas as categorias (não só a do separador). */
   useEffect(() => {
@@ -29,6 +30,12 @@ export function EmAndamentoPage() {
       cancelled = true;
     };
   }, [ui.page, reloadChaveFromServer]);
+
+  useEffect(() => {
+    if (ui.page !== 'emAndamento') return;
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, [ui.page]);
 
   const liveRows = useMemo((): LiveRow[] => {
     const order =
@@ -55,19 +62,20 @@ export function EmAndamentoPage() {
       <div className="hero card em-andamento-hero">
         <div>
           <span className="badge em-andamento">Em andamento</span>
-          <h1>Jogos ao vivo</h1>
+          <h1>Jogos em andamento</h1>
           <p className="helper em-andamento-intro">
-            Confrontos em curso em <strong>todas as categorias</strong> (jogos simultâneos), com a quadra indicada no
-            painel do árbitro.
+            Jogos em curso em <strong>todas as categorias</strong>, com a respectiva quadra.
           </p>
+        </div>
+        <div className="live-now-clock" aria-live="polite">
+          {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
         </div>
       </div>
 
       {liveRows.length === 0 ? (
         <div className="card panel empty-positions-hint">
           <p className="helper">
-            Nenhum jogo em andamento em nenhuma categoria. No admin, abra o confronto na chave, marque «Em andamento» e
-            preencha «Quadra».
+            Nenhum jogo em andamento em nenhuma categoria.
           </p>
         </div>
       ) : (

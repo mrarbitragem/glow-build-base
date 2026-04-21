@@ -10,7 +10,7 @@ import {
   dedupeClubSeeds,
   saveChaveCategory,
 } from '@/api/chaveWebhook';
-import { INITIAL_DATA, STORAGE_KEY, buildEmptySeedsForDraw } from '@/data/initialData';
+import { INITIAL_DATA, STORAGE_KEY, buildEmptySeedsForDraw, CATEGORY_FIXED_BYE_ONE_BASED } from '@/data/initialData';
 import { countRealSeeds } from '@/utils/bracketEngine';
 import { deepClone, slugify, fileToDataUrl } from '@/utils/helpers';
 import { normalizeClubFlagSrc } from '@/utils/clubFlag';
@@ -45,7 +45,7 @@ function mergeMissingCategoriesFromBootstrap(s: TournamentState): TournamentStat
 }
 
 const TWELVE_CLUB_16_IDS = ['d', 'iniciante', '50'] as const;
-const TEN_CLUB_B_STYLE_16_IDS = ['b', '60'] as const;
+const TEN_CLUB_B_STYLE_16_IDS = ['b'] as const;
 
 /**
  * D, Iniciante e 50+: backups em localStorage podem ter `seeds` de 16 posições só com `''` (sem clubes).
@@ -84,7 +84,43 @@ function repairEmptySubTwelveSeeds(s: TournamentState): TournamentState {
   };
 }
 
-/** B e 60+: estado antigo sem clubes — repõe arranque (B = vagas vazias + BYE; 60+ = 10 seeds exemplo). */
+/** Sub 16: migração do layout antigo (BYE nas posições 2 e 7) para o novo (só posição 2). */
+function repairSubSixteenSeeds(s: TournamentState): TournamentState {
+  return {
+    ...s,
+    categories: s.categories.map(cat => {
+      if (cat.id !== 'sub-16' || cat.slots !== 8) return cat;
+      const seeds = [...cat.seeds];
+      // posição 7 (índice 6) não é mais BYE fixo; vira vaga normal.
+      if (seeds[6] === null) seeds[6] = '';
+      return { ...cat, seeds: dedupeClubSeeds(seeds as (string | null)[]) };
+    }),
+  };
+}
+
+/** 60+: garante BYEs fixos do layout 9 em 16 (inclui posição 14). */
+function repairSixtyFixedByes(s: TournamentState): TournamentState {
+  const byePositions = CATEGORY_FIXED_BYE_ONE_BASED['60'];
+  if (!byePositions?.length) return s;
+  const byeIdx = new Set(byePositions.map(p => p - 1));
+  return {
+    ...s,
+    categories: s.categories.map(cat => {
+      if (cat.id !== '60' || cat.slots !== 16) return cat;
+      const seeds = [...cat.seeds];
+      let changed = false;
+      for (const idx of byeIdx) {
+        if (seeds[idx] !== null) {
+          seeds[idx] = null;
+          changed = true;
+        }
+      }
+      return changed ? { ...cat, seeds } : cat;
+    }),
+  };
+}
+
+/** B: estado antigo sem clubes — repõe arranque (vagas vazias + BYE). */
 function repairEmptyTenClubSixteenSeeds(s: TournamentState): TournamentState {
   return {
     ...s,
@@ -102,6 +138,58 @@ function repairEmptyTenClubSixteenSeeds(s: TournamentState): TournamentState {
   };
 }
 
+/** Migração: Sub 14 passa a seguir a A (16 slots com BYEs fixos da chave de 9 clubes). */
+function repairSubFourteenFormat(s: TournamentState): TournamentState {
+  const boot = INITIAL_DATA.categories.find(c => c.id === 'sub-14');
+  if (!boot?.seeds?.length) return s;
+  return {
+    ...s,
+    categories: s.categories.map(cat => {
+      if (cat.id !== 'sub-14') return cat;
+      if (cat.slots !== boot.slots) {
+        return {
+          ...cat,
+          slots: boot.slots,
+          seeds: dedupeClubSeeds(deepClone(boot.seeds) as (string | null)[]),
+          importedPlacements: [],
+          roundDefaults: {},
+          matchResults: {},
+        };
+      }
+      if (!Array.isArray(cat.seeds) || cat.seeds.length !== boot.slots) {
+        return { ...cat, seeds: dedupeClubSeeds(deepClone(boot.seeds) as (string | null)[]) };
+      }
+      return cat;
+    }),
+  };
+}
+
+/** Migração: Sub 18 passa a seguir a Profissional (8 slots sem BYE fixo). */
+function repairSubEighteenFormat(s: TournamentState): TournamentState {
+  const boot = INITIAL_DATA.categories.find(c => c.id === 'sub-18');
+  if (!boot?.seeds?.length) return s;
+  return {
+    ...s,
+    categories: s.categories.map(cat => {
+      if (cat.id !== 'sub-18') return cat;
+      if (cat.slots !== boot.slots) {
+        return {
+          ...cat,
+          slots: boot.slots,
+          seeds: dedupeClubSeeds(deepClone(boot.seeds) as (string | null)[]),
+          importedPlacements: [],
+          roundDefaults: {},
+          matchResults: {},
+        };
+      }
+      if (!Array.isArray(cat.seeds) || cat.seeds.length !== boot.slots) {
+        return { ...cat, seeds: dedupeClubSeeds(deepClone(boot.seeds) as (string | null)[]) };
+      }
+      return cat;
+    }),
+  };
+}
+
 function readShowPlacementPref(): boolean {
   try {
     return localStorage.getItem(PLACEMENT_PREF_KEY) === '1';
@@ -111,6 +199,15 @@ function readShowPlacementPref(): boolean {
 }
 
 function normalizeState(s: TournamentState): TournamentState {
+  if (typeof s.event?.title === 'string' && s.event.title.trim() === '4º Interclubes de Beach Tennis FBT') {
+    s.event.title = '5º Interclubes de Beach Tennis FBT';
+  }
+  if (
+    typeof s.event?.local === 'string' &&
+    (s.event.local.trim() === '' || s.event.local.trim() === 'VAMO, Brasília - DF')
+  ) {
+    s.event.local = 'Arena BRB, Brasília - DF';
+  }
   s.clubs = (s.clubs || []).map(club => ({
     ...club,
     flag: normalizeClubFlagSrc(typeof club.flag === 'string' ? club.flag : ''),
@@ -125,8 +222,14 @@ function normalizeState(s: TournamentState): TournamentState {
     return { ...merged, seeds: dedupeClubSeeds((merged.seeds || []) as (string | null)[]) };
   });
   s.categoryOrder = s.categoryOrder?.length ? s.categoryOrder : s.categories.map(c => c.id);
-  return repairEmptySubTwelveSeeds(
-    repairEmptyTenClubSixteenSeeds(repairEmptyTwelveClubCategorySeeds(s))
+  return repairSubEighteenFormat(
+    repairSubFourteenFormat(
+      repairSubSixteenSeeds(
+        repairSixtyFixedByes(
+          repairEmptySubTwelveSeeds(repairEmptyTenClubSixteenSeeds(repairEmptyTwelveClubCategorySeeds(s)))
+        )
+      )
+    )
   );
 }
 

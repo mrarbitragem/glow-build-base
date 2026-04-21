@@ -39,7 +39,7 @@ export function formatDateTime(dt: string): string {
 export function displayGameCode(code: string): string {
   if (!code) return '';
   const digits = String(code).replace(/\D+/g, '');
-  return digits ? `JOGO${digits}` : String(code);
+  return digits ? `Jogo ${digits}` : String(code);
 }
 
 export function fileToDataUrl(file: File): Promise<string> {

@@ -13,7 +13,6 @@ export function GeralPage() {
         <div>
           <span className="badge main">Classificação geral</span>
           <h1>Pontuação geral dos clubes</h1>
-          <div className="meta">Somatório automático por categoria, usando a tabela de pontos definida no sistema.</div>
         </div>
         <div className="grid-stats">
           <div className="stat"><small>Clubes cadastrados</small><strong>{rows.length}</strong></div>
@@ -23,11 +22,7 @@ export function GeralPage() {
       </div>
 
       <div className="card panel">
-        {!hasPoints && (
-          <div className="empty-state">
-            A classificação geral abrirá normalmente e será preenchida conforme os resultados finais forem sendo lançados.
-          </div>
-        )}
+        {!hasPoints && <div className="empty-state" />}
         <div style={{ overflow: 'auto' }}>
           <table className="table">
             <thead>

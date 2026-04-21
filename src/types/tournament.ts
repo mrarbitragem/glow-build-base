@@ -100,8 +100,12 @@ export interface BlockResult {
   finalLoserRef?: MatchRef;
   size?: number;
   roundCount?: number;
-  /** C e 40+: id da partida da 1ª rodada deste bloco cujo perdedor é o 11º (perdedor do jogo 11). */
-  footer11thFromMatchId?: string;
+  /** Colocação direta extra derivada do perdedor de uma partida específica dentro do bloco. */
+  footerPlacementFromMatch?: {
+    place: number;
+    matchId: string;
+    subtitle: string;
+  };
 }
 
 export interface StructureResult {
@@ -110,8 +114,8 @@ export interface StructureResult {
   placements: Placement[];
   totalGames: number;
   /**
-   * A e Sub 18 (9 clubes): 1º jogo jogável da R1 define o 9º direto; 1 item (ou null).
-   * Na B e 60+ (`id` `60`, 10 clubes) não é usado — 9º/10º vêm da disputa na chave de posições.
+   * A, Sub 14 e 60+ (9 clubes): 1º jogo jogável da R1 define o 9º direto; 1 item (ou null).
+   * Na B (10 clubes) não é usado — 9º/10º vêm da disputa na chave de posições.
    * Na C e 40+ (11 clubes) não é usado — 9º/10º/11º vêm da mini-chave dedicada.
    * Na D, Iniciante e 50+ (`id` `50`, 12 clubes) não é usado — 9º–12º vêm da mini-chave dedicada.
    */

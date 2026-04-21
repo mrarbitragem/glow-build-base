@@ -22,8 +22,10 @@ const BYE_16_X11 = [2, 6, 7, 11, 15] as const;
 /** 12 clubes em chave de 16 — 4 BYE (posições 1-based 2, 6, 11, 15) */
 const BYE_16_X12 = [2, 6, 11, 15] as const;
 
-/** 6 clubes em chave de 8 — 2 BYE nas posições 1-based 2 e 7 (Sub 12 e Sub 16). */
-const BYE_8_X6 = [2, 7] as const;
+/** Sub 12 (7 clubes em 8): 1 BYE na posição 1-based 2. */
+const BYE_8_SUB12_X7 = [2] as const;
+/** Sub 16 (7 clubes em 8): 1 BYE na posição 1-based 2. */
+const BYE_8_SUB16_X7 = [2] as const;
 
 /**
  * Posições 1-based com BYE fixo (igual a `seedsWithFixedByes`).
@@ -35,18 +37,19 @@ export const CATEGORY_FIXED_BYE_ONE_BASED: Partial<Record<string, readonly numbe
   c: BYE_16_X11,
   d: BYE_16_X12,
   iniciante: BYE_16_X12,
-  'sub-12': BYE_8_X6,
-  'sub-16': BYE_8_X6,
-  'sub-18': BYE_16_X9,
+  'sub-12': BYE_8_SUB12_X7,
+  /** Sub 14 segue o mesmo desenho da categoria A (9 clubes em 16). */
+  'sub-14': BYE_16_X9,
+  'sub-16': BYE_8_SUB16_X7,
   '40+': BYE_16_X11,
   '50': BYE_16_X12,
-  /** 10 clubes em 16 — igual à B. */
-  '60': BYE_16_B,
+  /** 60+ segue a A: 9 clubes em chave de 16. */
+  '60': BYE_16_X9,
 };
 
 /**
  * Chave «vazia» para sorteio: só vagas em branco e BYEs fixos onde a categoria exige.
- * Categorias sem entrada no mapa (ex.: `profissional`, `sub-14`): todas as posições vazias.
+ * Categorias sem entrada no mapa (ex.: `profissional`): todas as posições vazias.
  */
 export function buildEmptySeedsForDraw(categoryId: string, slots: number): (string | null)[] {
   const layout = CATEGORY_FIXED_BYE_ONE_BASED[categoryId];
@@ -96,9 +99,9 @@ export const INITIAL_DATA: TournamentState = {
     { id: "d", name: "D", slots: 16, seeds: buildEmptySeedsForDraw("d", 16), importedPlacements: [], roundDefaults: {}, matchResults: {} },
     { id: "iniciante", name: "Iniciante", slots: 16, seeds: buildEmptySeedsForDraw("iniciante", 16), importedPlacements: [], roundDefaults: {}, matchResults: {} },
     { id: "sub-12", name: "Sub 12", slots: 8, seeds: buildEmptySeedsForDraw("sub-12", 8), importedPlacements: [], roundDefaults: {}, matchResults: {} },
-    { id: "sub-14", name: "Sub 14", slots: 8, seeds: buildEmptySeedsForDraw("sub-14", 8), importedPlacements: [], roundDefaults: {}, matchResults: {} },
+    { id: "sub-14", name: "Sub 14", slots: 16, seeds: buildEmptySeedsForDraw("sub-14", 16), importedPlacements: [], roundDefaults: {}, matchResults: {} },
     { id: "sub-16", name: "Sub 16", slots: 8, seeds: buildEmptySeedsForDraw("sub-16", 8), importedPlacements: [], roundDefaults: {}, matchResults: {} },
-    { id: "sub-18", name: "Sub 18", slots: 16, seeds: buildEmptySeedsForDraw("sub-18", 16), importedPlacements: [], roundDefaults: {}, matchResults: {} },
+    { id: "sub-18", name: "Sub 18", slots: 8, seeds: buildEmptySeedsForDraw("sub-18", 8), importedPlacements: [], roundDefaults: {}, matchResults: {} },
     { id: "40+", name: "40+", slots: 16, seeds: buildEmptySeedsForDraw("40+", 16), importedPlacements: [], roundDefaults: {}, matchResults: {} },
     { id: "50", name: "50+", slots: 16, seeds: buildEmptySeedsForDraw("50", 16), importedPlacements: [], roundDefaults: {}, matchResults: {} },
     { id: "60", name: "60+", slots: 16, seeds: buildEmptySeedsForDraw("60", 16), importedPlacements: [], roundDefaults: {}, matchResults: {} }
