@@ -1,5 +1,5 @@
 import type { Club, Category, MatchState, TournamentState } from '@/types/tournament';
-import { CATEGORY_FIXED_BYE_ONE_BASED } from '@/data/initialData';
+import { CATEGORY_FIXED_BYE_ONE_BASED, sanitizeEightSlotSevenClubCategorySeeds } from '@/data/initialData';
 
 /** Converte célula do servidor (id ou NOME MAIÚSCULO) para o `club.id` usado na app. */
 function normalizeSeedCell(raw: string | null, clubs: Club[]): string | null {
@@ -192,11 +192,17 @@ function expandCompactFixedByeSeeds(
 
 function resolveSeedsForMerge(cat: Category, seeds: (string | null)[] | undefined): (string | null)[] | undefined {
   if (!seeds?.length) return undefined;
-  if (seeds.length === cat.slots) return seeds;
-  const layout = CATEGORY_FIXED_BYE_ONE_BASED[cat.id];
-  if (!layout) return undefined;
-  const expanded = expandCompactFixedByeSeeds(cat.slots, layout, seeds);
-  return expanded ?? undefined;
+  let resolved: (string | null)[] | undefined;
+  if (seeds.length === cat.slots) {
+    resolved = seeds as (string | null)[];
+  } else {
+    const layout = CATEGORY_FIXED_BYE_ONE_BASED[cat.id];
+    if (!layout) return undefined;
+    const expanded = expandCompactFixedByeSeeds(cat.slots, layout, seeds);
+    resolved = expanded ?? undefined;
+  }
+  if (!resolved) return undefined;
+  return sanitizeEightSlotSevenClubCategorySeeds(cat.id, resolved);
 }
 
 /** Coluna MySQL JSON por vezes vem como string; n8n pode mandar já como objeto/array. */
@@ -552,6 +558,11 @@ export type MergeChaveOptions = {
    * Sem isto, resultados antigos são fundidos com os novos e podem ficar em jogos errados.
    */
   resetMatchResultsToPatch?: boolean;
+  /**
+   * Quando `true`, funde `roundDefaults` do servidor por cima do local (sincronização explícita no Admin).
+   * Quando `false`/omitido, **não** sobrescreve horários já definidos; só preenche chaves locais ainda vazias.
+   */
+  mergeRoundDefaultsFromPatch?: boolean;
 };
 
 function matchResultsFromPatch(patch: ChaveLoadPayload): Record<string, MatchState> {
@@ -577,7 +588,22 @@ export function mergeChaveIntoState(
   const resolvedSeeds = target ? resolveSeedsForMerge(target, patch.seeds) : undefined;
   const willSeeds = !!(target && resolvedSeeds && resolvedSeeds.length === target.slots);
   const hasMr = !!(patch.matchResults && Object.keys(patch.matchResults).length > 0);
-  const hasRd = !!(patch.roundDefaults && Object.keys(patch.roundDefaults).length > 0);
+  const patchRd = patch.roundDefaults;
+  const hasRd = !!(patchRd && Object.keys(patchRd).length > 0);
+  const allowFullRoundDefaultsMerge = options?.mergeRoundDefaultsFromPatch === true;
+  /** Sincronização passiva: só traz horários do servidor para chaves que ainda estão vazias localmente. */
+  let passiveRoundDefaultsMerge = false;
+  if (hasRd && !allowFullRoundDefaultsMerge && target) {
+    const localRd = target.roundDefaults;
+    for (const [k, v] of Object.entries(patchRd!)) {
+      const cur = localRd[k];
+      if ((cur === undefined || String(cur).trim() === '') && String(v ?? '').trim() !== '') {
+        passiveRoundDefaultsMerge = true;
+        break;
+      }
+    }
+  }
+  const willMergeRoundDefaults = (allowFullRoundDefaultsMerge && hasRd) || passiveRoundDefaultsMerge;
   /** Servidor enviou `matchResults: {}` — não há linhas em `jogo`; o cliente não deve manter `inProgress` antigo do localStorage. */
   const explicitEmptyMatchResults =
     patch.matchResults !== undefined &&
@@ -585,7 +611,7 @@ export function mergeChaveIntoState(
     !Array.isArray(patch.matchResults) &&
     Object.keys(patch.matchResults).length === 0;
 
-  if (!willSeeds && !hasMr && !hasRd && !resetMr && !explicitEmptyMatchResults) return prev;
+  if (!willSeeds && !hasMr && !willMergeRoundDefaults && !resetMr && !explicitEmptyMatchResults) return prev;
 
   const cats = prev.categories.map(cat => {
     if (cat.id !== categoryId) return cat;
@@ -612,11 +638,20 @@ export function mergeChaveIntoState(
       };
     }
 
-    if (patch.roundDefaults && Object.keys(patch.roundDefaults).length > 0) {
+    if (allowFullRoundDefaultsMerge && hasRd) {
       next = {
         ...next,
-        roundDefaults: { ...next.roundDefaults, ...patch.roundDefaults },
+        roundDefaults: { ...next.roundDefaults, ...patchRd! },
       };
+    } else if (passiveRoundDefaultsMerge && hasRd) {
+      const rd = { ...next.roundDefaults };
+      for (const [k, v] of Object.entries(patchRd!)) {
+        const cur = rd[k];
+        if ((cur === undefined || String(cur).trim() === '') && String(v ?? '').trim() !== '') {
+          rd[k] = String(v);
+        }
+      }
+      next = { ...next, roundDefaults: rd };
     }
 
     return next;

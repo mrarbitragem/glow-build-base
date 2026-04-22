@@ -57,6 +57,21 @@ export function buildEmptySeedsForDraw(categoryId: string, slots: number): (stri
   return Array.from({ length: slots }, () => '');
 }
 
+/**
+ * Sub 12 / Sub 16 (8 vagas, 7 clubes): só a posição **2** é BYE fixo (`null`).
+ * Dados antigos ou `seeds_json` da BD podem ainda trazer `null` na posição 7 — isso não é BYE fixo.
+ */
+export function sanitizeEightSlotSevenClubCategorySeeds(
+  categoryId: string,
+  seeds: (string | null)[]
+): (string | null)[] {
+  if ((categoryId !== 'sub-12' && categoryId !== 'sub-16') || seeds.length !== 8) return seeds;
+  const next = [...seeds];
+  next[1] = null;
+  if (next[6] === null) next[6] = '';
+  return next;
+}
+
 export const INITIAL_DATA: TournamentState = {
   event: {
     title: "5º Interclubes de Beach Tennis FBT",

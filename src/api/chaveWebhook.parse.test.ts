@@ -82,6 +82,88 @@ describe('mergeChaveIntoState', () => {
     expect(next.categories[0].matchResults['R1-m1']?.inProgress).toBe(false);
     expect(next.categories[0].matchResults['R1-m1']?.court).toBe('1');
   });
+
+  it('sem mergeRoundDefaultsFromPatch, não sobrescreve horários locais já preenchidos', () => {
+    const prev: TournamentState = {
+      event: { title: 'T', local: 'L', arbitroGeral: 'A' },
+      pointsByPlace: {},
+      clubs: [],
+      categoryOrder: ['sub-14'],
+      categories: [
+        {
+          id: 'sub-14',
+          name: 'Sub 14',
+          slots: 8,
+          seeds: Array(8).fill(''),
+          importedPlacements: [],
+          roundDefaults: { 'main:R1': '2026-04-22T10:00' },
+          matchResults: {},
+        },
+      ],
+    };
+    const patch = parseChaveLoadResponse({
+      seeds: ['1', '2', '3', '4', '5', '6', '7', '8'],
+      roundDefaults: { 'main:R1': '2026-04-23T15:00' },
+      matchResults: {},
+    });
+    const next = mergeChaveIntoState(prev, 'sub-14', patch);
+    expect(next.categories[0].roundDefaults['main:R1']).toBe('2026-04-22T10:00');
+  });
+
+  it('mergeRoundDefaultsFromPatch true substitui/fundir roundDefaults com o patch', () => {
+    const prev: TournamentState = {
+      event: { title: 'T', local: 'L', arbitroGeral: 'A' },
+      pointsByPlace: {},
+      clubs: [],
+      categoryOrder: ['sub-14'],
+      categories: [
+        {
+          id: 'sub-14',
+          name: 'Sub 14',
+          slots: 8,
+          seeds: Array(8).fill(''),
+          importedPlacements: [],
+          roundDefaults: { 'main:R1': '2026-04-22T10:00' },
+          matchResults: {},
+        },
+      ],
+    };
+    const patch = parseChaveLoadResponse({
+      seeds: ['1', '2', '3', '4', '5', '6', '7', '8'],
+      roundDefaults: { 'main:R1': '2026-04-23T15:00' },
+      matchResults: {},
+    });
+    const next = mergeChaveIntoState(prev, 'sub-14', patch, { mergeRoundDefaultsFromPatch: true });
+    expect(next.categories[0].roundDefaults['main:R1']).toBe('2026-04-23T15:00');
+  });
+
+  it('fusão passiva preenche só chaves de horário ainda vazias', () => {
+    const prev: TournamentState = {
+      event: { title: 'T', local: 'L', arbitroGeral: 'A' },
+      pointsByPlace: {},
+      clubs: [],
+      categoryOrder: ['p'],
+      categories: [
+        {
+          id: 'p',
+          name: 'Prof',
+          slots: 8,
+          seeds: Array(8).fill(''),
+          importedPlacements: [],
+          roundDefaults: { 'main:R1': '2026-04-22T10:00' },
+          matchResults: {},
+        },
+      ],
+    };
+    const patch = parseChaveLoadResponse({
+      seeds: ['1', '2', '3', '4', '5', '6', '7', '8'],
+      roundDefaults: { 'main:R1': '2026-04-23T15:00', 'main:R2': '2026-04-24T09:00' },
+      matchResults: {},
+    });
+    const next = mergeChaveIntoState(prev, 'p', patch);
+    expect(next.categories[0].roundDefaults['main:R1']).toBe('2026-04-22T10:00');
+    expect(next.categories[0].roundDefaults['main:R2']).toBe('2026-04-24T09:00');
+  });
 });
 
 describe('matchStateFromRow', () => {

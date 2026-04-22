@@ -10,7 +10,13 @@ import {
   dedupeClubSeeds,
   saveChaveCategory,
 } from '@/api/chaveWebhook';
-import { INITIAL_DATA, STORAGE_KEY, buildEmptySeedsForDraw, CATEGORY_FIXED_BYE_ONE_BASED } from '@/data/initialData';
+import {
+  INITIAL_DATA,
+  STORAGE_KEY,
+  buildEmptySeedsForDraw,
+  CATEGORY_FIXED_BYE_ONE_BASED,
+  sanitizeEightSlotSevenClubCategorySeeds,
+} from '@/data/initialData';
 import { countRealSeeds } from '@/utils/bracketEngine';
 import { deepClone, slugify, fileToDataUrl } from '@/utils/helpers';
 import { normalizeClubFlagSrc } from '@/utils/clubFlag';
@@ -65,7 +71,7 @@ function repairEmptyTwelveClubCategorySeeds(s: TournamentState): TournamentState
   };
 }
 
-/** Sub 12: localStorage antigo pode ter 8 vagas sem clubes — repõe arranque com BYE 2 e 7. */
+/** Sub 12: localStorage antigo pode ter 8 vagas sem clubes — repõe arranque com BYE fixo na posição 2. */
 function repairEmptySubTwelveSeeds(s: TournamentState): TournamentState {
   const boot = INITIAL_DATA.categories.find(c => c.id === 'sub-12');
   if (!boot?.seeds?.length) return s;
@@ -74,24 +80,51 @@ function repairEmptySubTwelveSeeds(s: TournamentState): TournamentState {
     categories: s.categories.map(cat => {
       if (cat.id !== 'sub-12' || cat.slots !== 8) return cat;
       if (!Array.isArray(cat.seeds) || cat.seeds.length !== 8) {
-        return { ...cat, seeds: dedupeClubSeeds(deepClone(boot.seeds) as (string | null)[]) };
+        return {
+          ...cat,
+          seeds: dedupeClubSeeds(sanitizeEightSlotSevenClubCategorySeeds('sub-12', deepClone(boot.seeds) as (string | null)[])),
+        };
       }
-      if (countRealSeeds(cat.seeds) > 0) return cat;
-      return { ...cat, seeds: dedupeClubSeeds(deepClone(boot.seeds) as (string | null)[]) };
+      if (countRealSeeds(cat.seeds) > 0) {
+        return {
+          ...cat,
+          seeds: dedupeClubSeeds(sanitizeEightSlotSevenClubCategorySeeds('sub-12', [...cat.seeds] as (string | null)[])),
+        };
+      }
+      return {
+        ...cat,
+        seeds: dedupeClubSeeds(sanitizeEightSlotSevenClubCategorySeeds('sub-12', deepClone(boot.seeds) as (string | null)[])),
+      };
     }),
   };
 }
 
-/** Sub 16: migração do layout antigo (BYE nas posições 2 e 7) para o novo (só posição 2). */
+/** Sub 16: garante o mesmo desenho da Sub 12 (7 clubes em 8, BYE fixo só na posição 2). */
 function repairSubSixteenSeeds(s: TournamentState): TournamentState {
+  const boot = INITIAL_DATA.categories.find(c => c.id === 'sub-16');
+  if (!boot?.seeds?.length) return s;
   return {
     ...s,
     categories: s.categories.map(cat => {
       if (cat.id !== 'sub-16' || cat.slots !== 8) return cat;
-      const seeds = [...cat.seeds];
-      // posição 7 (índice 6) não é mais BYE fixo; vira vaga normal.
-      if (seeds[6] === null) seeds[6] = '';
-      return { ...cat, seeds: dedupeClubSeeds(seeds as (string | null)[]) };
+      // Estado inválido/antigo: volta ao arranque oficial da categoria.
+      if (!Array.isArray(cat.seeds) || cat.seeds.length !== 8) {
+        return {
+          ...cat,
+          seeds: dedupeClubSeeds(sanitizeEightSlotSevenClubCategorySeeds('sub-16', deepClone(boot.seeds) as (string | null)[])),
+        };
+      }
+      // Sem clubes reais: repõe o layout base (garante BYE fixo no slot 2).
+      if (countRealSeeds(cat.seeds) === 0) {
+        return {
+          ...cat,
+          seeds: dedupeClubSeeds(sanitizeEightSlotSevenClubCategorySeeds('sub-16', deepClone(boot.seeds) as (string | null)[])),
+        };
+      }
+      return {
+        ...cat,
+        seeds: dedupeClubSeeds(sanitizeEightSlotSevenClubCategorySeeds('sub-16', [...cat.seeds] as (string | null)[])),
+      };
     }),
   };
 }
@@ -286,8 +319,11 @@ interface TournamentContextType {
   importBackup: (data: string) => boolean;
   resetAll: () => void;
   getCategory: (id: string) => Category;
-  /** Recarrega uma categoria do `load_chave`. `afterOfficialDraw` limpa/fundir resultados só com o que vier no servidor. */
-  reloadChaveFromServer: (categoryId: string, opts?: { afterOfficialDraw?: boolean }) => Promise<void>;
+  /** Recarrega uma categoria do `load_chave`. `afterOfficialDraw` limpa/fundir resultados só com o que vier no servidor. `mergeRoundDefaultsFromPatch` traz horários da BD (omitir em polling). */
+  reloadChaveFromServer: (
+    categoryId: string,
+    opts?: { afterOfficialDraw?: boolean; mergeRoundDefaultsFromPatch?: boolean }
+  ) => Promise<void>;
   /** Recarrega todas as categorias após sorteio (limpa resultados conforme o servidor em cada uma). */
   reloadAllChavesAfterOfficialDraw: () => Promise<void>;
   /** Busca clubes no n8n, atualiza estado e funde chaves (ver `CHAVE_IDS_AFTER_CLUB_SYNC`) com o load_chave. */
@@ -778,22 +814,32 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     setUi(prev => ({ ...prev, selectedMatchId: '', matchModalOpen: false }));
   }, []);
 
-  const reloadChaveFromServer = useCallback(async (categoryId: string, opts?: { afterOfficialDraw?: boolean }) => {
-    const patch = await fetchChaveCategory(categoryId);
-    setState(prev => {
-      const next = mergeChaveIntoState(prev, categoryId, patch, {
-        resetMatchResultsToPatch: opts?.afterOfficialDraw === true,
+  const reloadChaveFromServer = useCallback(
+    async (
+      categoryId: string,
+      opts?: { afterOfficialDraw?: boolean; mergeRoundDefaultsFromPatch?: boolean }
+    ) => {
+      const patch = await fetchChaveCategory(categoryId);
+      setState(prev => {
+        const next = mergeChaveIntoState(prev, categoryId, patch, {
+          resetMatchResultsToPatch: opts?.afterOfficialDraw === true,
+          mergeRoundDefaultsFromPatch: opts?.mergeRoundDefaultsFromPatch === true,
+        });
+        if (next === prev) return prev;
+        saveState(next);
+        return next;
       });
-      if (next === prev) return prev;
-      saveState(next);
-      return next;
-    });
-  }, []);
+    },
+    []
+  );
 
   const reloadAllChavesAfterOfficialDraw = useCallback(async () => {
     const base = stateRef.current;
     const ids = [...new Set([...(base.categoryOrder || []), ...base.categories.map(c => c.id)])];
-    const acc = await fetchAndMergeChavesForIds(base, ids, { resetMatchResultsToPatch: true });
+    const acc = await fetchAndMergeChavesForIds(base, ids, {
+      resetMatchResultsToPatch: true,
+      mergeRoundDefaultsFromPatch: true,
+    });
     saveState(acc);
     setState(acc);
   }, []);

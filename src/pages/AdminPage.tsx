@@ -27,6 +27,9 @@ type ProgramacaoRow = {
   resultLabel: string;
 };
 
+/** Impressão da programação do dia: nova folha e novo cabeçalho de colunas a cada N jogos. */
+const PROGRAMACAO_ROWS_PER_PRINT_PAGE = 31;
+
 function AdminSidebar() {
   const {
     state,
@@ -79,7 +82,10 @@ function AdminSidebar() {
     setChaveSyncBusy(true);
     setChaveSyncError(null);
     try {
-      await reloadChaveFromServer(ui.categoryId, { afterOfficialDraw });
+      await reloadChaveFromServer(ui.categoryId, {
+        afterOfficialDraw,
+        mergeRoundDefaultsFromPatch: true,
+      });
     } catch (e) {
       setChaveSyncError(e instanceof Error ? e.message : 'Não foi possível recarregar a chave.');
     } finally {
@@ -363,7 +369,7 @@ function AdminSidebar() {
       return `${d.toLocaleDateString('pt-BR')} - ${wd.charAt(0).toUpperCase()}${wd.slice(1)}`;
     })();
 
-    const htmlRows = rows.map(r => `
+    const rowHtml = (r: ProgramacaoRow) => `
       <tr>
         <td>${escapeHtml(r.timeLabel)}</td>
         <td>${escapeHtml(r.roundLabel)}</td>
@@ -375,8 +381,34 @@ function AdminSidebar() {
           <span class="confronto-right">${escapeHtml(r.rightName)}</span>
         </td>
         <td>${escapeHtml(r.resultLabel)}</td>
-      </tr>
-    `).join('');
+      </tr>`;
+
+    const chunks: ProgramacaoRow[][] = [];
+    for (let i = 0; i < rows.length; i += PROGRAMACAO_ROWS_PER_PRINT_PAGE) {
+      chunks.push(rows.slice(i, i + PROGRAMACAO_ROWS_PER_PRINT_PAGE));
+    }
+
+    const theadHtml = `
+            <tr>
+              <th>Hora</th>
+              <th>Rodada</th>
+              <th>Categoria</th>
+              <th>Jogo</th>
+              <th class="confronto-head">Confronto</th>
+              <th>Resultado</th>
+            </tr>`;
+
+    const tablesHtml = chunks
+      .map(
+        chunk => `
+        <div class="programacao-sheet">
+          <table class="programacao">
+            <thead>${theadHtml}</thead>
+            <tbody>${chunk.map(rowHtml).join('')}</tbody>
+          </table>
+        </div>`
+      )
+      .join('');
 
     const mrLogoUrl = `${window.location.origin}/images/logo-mr.png`;
     const w = window.open('', '_blank', 'width=1120,height=900');
@@ -394,31 +426,48 @@ function AdminSidebar() {
           body { font-family: Arial, Helvetica, sans-serif; margin: 18px; color: #111; }
           .head h1 { margin: 0; font-size: 20px; text-transform: uppercase; }
           .head p { margin: 3px 0; }
-          table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-          th, td { border: 1px solid #bbb; padding: 6px 8px; font-size: 12px; vertical-align: top; }
+          .programacao-sheet { margin-top: 10px; }
+          .programacao-sheet:first-child { margin-top: 0; }
+          table.programacao { width: 100%; border-collapse: collapse; margin-top: 6px; }
+          table.programacao thead { display: table-header-group; }
+          table.programacao tbody { display: table-row-group; }
+          th, td { border: 1px solid #bbb; padding: 6px 8px; font-size: 12px; vertical-align: middle; }
           th { background: #f3f3f3; text-align: left; }
+          table.programacao tr {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+          table.programacao thead tr {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
           .confronto-head { text-align: center; }
+          /* Flex em vez de grid: em impressão, grid nas células pode impedir repetir thead em cada folha. */
           .confronto-cell {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+            display: flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
+            min-width: 0;
             text-align: center;
           }
           .confronto-left {
+            flex: 1 1 0;
+            min-width: 0;
             text-align: right;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
           }
           .confronto-right {
+            flex: 1 1 0;
+            min-width: 0;
             text-align: left;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
           }
-          .confronto-x { font-weight: 700; }
-          thead { display: table-header-group; }
+          .confronto-x { flex: 0 0 auto; font-weight: 700; }
           .print-footer-mr {
             position: fixed;
             left: 0;
@@ -443,8 +492,28 @@ function AdminSidebar() {
             object-fit: contain;
           }
           @media print {
-            @page { margin: 14mm 10mm 14mm 10mm; }
-            body { margin: 0; padding-top: 24mm; padding-bottom: 16mm; }
+            /** Margem superior em todas as folhas: cabeçalho fixo do evento não cobre a tabela */
+            @page { margin: 22mm 10mm 14mm 10mm; }
+            body { margin: 0; padding: 0 0 14mm 0; }
+            /** Cada bloco = até ${PROGRAMACAO_ROWS_PER_PRINT_PAGE} jogos + cabeçalho de colunas; salta de folha */
+            .programacao-sheet {
+              page-break-after: always;
+              break-after: page;
+            }
+            .programacao-sheet:last-child {
+              page-break-after: auto;
+              break-after: auto;
+            }
+            table.programacao thead {
+              display: table-header-group !important;
+            }
+            table.programacao tbody {
+              display: table-row-group !important;
+            }
+            table.programacao {
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
             .print-running-head {
               position: fixed;
               top: 0;
@@ -469,19 +538,7 @@ function AdminSidebar() {
           <p><strong>Local de Jogos:</strong> ${escapeHtml(state.event.local)}</p>
           <p><strong>Programação do dia:</strong> ${escapeHtml(dateLabel)}</p>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Hora</th>
-              <th>Rodada</th>
-              <th>Categoria</th>
-              <th>Jogo</th>
-              <th class="confronto-head">Confronto</th>
-              <th>Resultado</th>
-            </tr>
-          </thead>
-          <tbody>${htmlRows}</tbody>
-        </table>
+        ${tablesHtml}
         <div class="print-footer-mr" aria-hidden="true">
           <span>Desenvolvido por</span>
           <img src="${escapeHtml(mrLogoUrl)}" alt="" class="print-footer-mr-logo" />
