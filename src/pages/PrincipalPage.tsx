@@ -3,6 +3,7 @@ import { evaluateStructure, countRealSeeds, categoryHasTwelveClubNineToTwelvePla
 import { BracketView, BlockView } from '@/components/BracketView';
 import { DirectNinthPlaceCard } from '@/components/DirectNinthPlaceCard';
 import { ClassificationTable } from '@/components/ClassificationTable';
+import { PrintPageHeader } from '@/components/PrintPageHeader';
 
 export function PrincipalPage() {
   const { state, ui, getCategory } = useTournament();
@@ -38,6 +39,7 @@ export function PrincipalPage() {
 
   return (
     <div className="page">
+      <PrintPageHeader event={state.event} categoryLabel={category.name} />
       <div className="hero card main">
         <div>
           <span className="badge main">Chaves</span>

@@ -578,7 +578,14 @@ export function mergeChaveIntoState(
   const willSeeds = !!(target && resolvedSeeds && resolvedSeeds.length === target.slots);
   const hasMr = !!(patch.matchResults && Object.keys(patch.matchResults).length > 0);
   const hasRd = !!(patch.roundDefaults && Object.keys(patch.roundDefaults).length > 0);
-  if (!willSeeds && !hasMr && !hasRd && !resetMr) return prev;
+  /** Servidor enviou `matchResults: {}` — não há linhas em `jogo`; o cliente não deve manter `inProgress` antigo do localStorage. */
+  const explicitEmptyMatchResults =
+    patch.matchResults !== undefined &&
+    typeof patch.matchResults === 'object' &&
+    !Array.isArray(patch.matchResults) &&
+    Object.keys(patch.matchResults).length === 0;
+
+  if (!willSeeds && !hasMr && !hasRd && !resetMr && !explicitEmptyMatchResults) return prev;
 
   const cats = prev.categories.map(cat => {
     if (cat.id !== categoryId) return cat;
@@ -595,6 +602,13 @@ export function mergeChaveIntoState(
       next = {
         ...next,
         matchResults: { ...next.matchResults, ...matchResultsFromPatch(patch) },
+      };
+    } else if (explicitEmptyMatchResults) {
+      next = {
+        ...next,
+        matchResults: Object.fromEntries(
+          Object.entries(next.matchResults).map(([id, st]) => [id, { ...st, inProgress: false }])
+        ),
       };
     }
 
