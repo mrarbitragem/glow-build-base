@@ -1058,6 +1058,13 @@
   }
 
   .page { padding: 0; }
+  /** Cabeçalho de impressão unificado; evita duplicar título com o hero só de ecrã. */
+  .page > .hero {
+    display: none !important;
+  }
+  .live-now-clock {
+    display: none !important;
+  }
   .admin-layout { display: block; }
   .canvas-panel { border: 0; padding: 0; }
   .print-header {
@@ -1066,6 +1073,8 @@
     border-radius: 10px;
     padding: 8px 10px;
     margin-bottom: 8px;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
   .print-event-title {
     font-size: 14px;
