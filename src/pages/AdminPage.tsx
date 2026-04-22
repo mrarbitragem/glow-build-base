@@ -6,12 +6,26 @@ import {
   scheduleLabel,
   collectMatches,
   categoryHasTwelveClubNineToTwelvePlayoff,
+  visibleMatchCode,
 } from '@/utils/bracketEngine';
 import { BracketView, BlockView } from '@/components/BracketView';
 import { DirectNinthPlaceCard } from '@/components/DirectNinthPlaceCard';
 import { ClubFlagMedia } from '@/components/ClubFlagMedia';
 import { fileToDataUrl } from '@/utils/helpers';
 import { BlockResult, EvaluatedMatch } from '@/types/tournament';
+
+type ProgramacaoRow = {
+  dateKey: string;
+  timeLabel: string;
+  roundLabel: string;
+  categoryName: string;
+  gameLabel: string;
+  categorySort: number;
+  gameSort: number;
+  leftName: string;
+  rightName: string;
+  resultLabel: string;
+};
 
 function AdminSidebar() {
   const {
@@ -50,6 +64,7 @@ function AdminSidebar() {
   const [categorySaveBusy, setCategorySaveBusy] = useState(false);
   const [categorySaveError, setCategorySaveError] = useState<string | null>(null);
   const [categorySaveOk, setCategorySaveOk] = useState<string | null>(null);
+  const [programacaoDate, setProgramacaoDate] = useState(() => new Date().toISOString().slice(0, 10));
 
   const handleReloadChaveThis = async (afterOfficialDraw: boolean) => {
     const label = category.name;
@@ -253,6 +268,232 @@ function AdminSidebar() {
     reader.readAsText(file);
   };
 
+  const parseDateTimeParts = (raw: string): { dateKey: string; timeLabel: string } | null => {
+    const t = String(raw || '').trim();
+    if (!t) return null;
+    const m = t.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{2}:\d{2})/);
+    if (m) return { dateKey: m[1], timeLabel: m[2] };
+    const dt = new Date(t);
+    if (Number.isNaN(dt.getTime())) return null;
+    return {
+      dateKey: dt.toISOString().slice(0, 10),
+      timeLabel: dt.toTimeString().slice(0, 5),
+    };
+  };
+
+  const escapeHtml = (v: string): string =>
+    String(v)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+
+  const shortRoundLabel = (label: string): string => {
+    return String(label || '')
+      .replace(/Oitavas de final/gi, 'O.F')
+      .replace(/Quartas de final/gi, 'Q.F')
+      .replace(/Semifinal(?:es)?/gi, 'SF')
+      .replace(/\bFinal\b/gi, 'F')
+      .replace(/\bRodada\s*(\d+)/gi, 'R$1');
+  };
+
+  const buildProgramacaoRowsForDate = (dateKey: string): ProgramacaoRow[] => {
+    const rows: ProgramacaoRow[] = [];
+    const order = state.categoryOrder?.length ? state.categoryOrder : state.categories.map(c => c.id);
+    const categorySortById = new Map(order.map((id, idx) => [id, idx]));
+    for (const cid of order) {
+      const cat = state.categories.find(c => c.id === cid);
+      if (!cat) continue;
+      const struct = evaluateStructure(cat, state.clubs);
+      const all: EvaluatedMatch[] = [...struct.mainRounds.flat()];
+      struct.placementBlocks.forEach(block => collectMatches(block, all));
+      for (const m of all) {
+        const dtParts = parseDateTimeParts(m.effectiveDate || '');
+        if (!dtParts || dtParts.dateKey !== dateKey) continue;
+        if (m.left.bye || m.right.bye) continue;
+        const code = visibleMatchCode(m);
+        const gameNumberMatch = (code || '').match(/(\d+)/);
+        const gameNumber = gameNumberMatch ? Number(gameNumberMatch[1]) : Number.POSITIVE_INFINITY;
+        const gameLabel = Number.isFinite(gameNumber) ? `J${gameNumber}` : (code || m.id);
+        const s1 = String(m.saved.score1 ?? '').trim();
+        const s2 = String(m.saved.score2 ?? '').trim();
+        rows.push({
+          dateKey: dtParts.dateKey,
+          timeLabel: dtParts.timeLabel,
+          roundLabel: shortRoundLabel(scheduleLabel(m)),
+          categoryName: cat.name,
+          gameLabel,
+          categorySort: categorySortById.get(cat.id) ?? 999,
+          gameSort: Number.isFinite(gameNumber) ? gameNumber : 9999,
+          leftName: m.left.name || 'Aguardando',
+          rightName: m.right.name || 'Aguardando',
+          resultLabel: s1 || s2 ? `${s1 || ''} x ${s2 || ''}` : '',
+        });
+      }
+    }
+    rows.sort((a, b) => {
+      const t = a.timeLabel.localeCompare(b.timeLabel);
+      if (t !== 0) return t;
+      const c = a.categorySort - b.categorySort;
+      if (c !== 0) return c;
+      const g = a.gameSort - b.gameSort;
+      if (g !== 0) return g;
+      return a.gameLabel.localeCompare(b.gameLabel, 'pt-BR');
+    });
+    return rows;
+  };
+
+  const handlePrintProgramacaoDia = () => {
+    const dateKey = programacaoDate;
+    if (!dateKey) {
+      alert('Escolha uma data para imprimir a programação.');
+      return;
+    }
+    const rows = buildProgramacaoRowsForDate(dateKey);
+    if (rows.length === 0) {
+      alert('Não há jogos programados para esta data.');
+      return;
+    }
+
+    const dateLabel = (() => {
+      const d = new Date(`${dateKey}T00:00:00`);
+      if (Number.isNaN(d.getTime())) return dateKey;
+      const wd = d.toLocaleDateString('pt-BR', { weekday: 'long' });
+      return `${d.toLocaleDateString('pt-BR')} - ${wd.charAt(0).toUpperCase()}${wd.slice(1)}`;
+    })();
+
+    const htmlRows = rows.map(r => `
+      <tr>
+        <td>${escapeHtml(r.timeLabel)}</td>
+        <td>${escapeHtml(r.roundLabel)}</td>
+        <td>${escapeHtml(r.categoryName)}</td>
+        <td>${escapeHtml(r.gameLabel)}</td>
+        <td class="confronto-cell">
+          <span class="confronto-left">${escapeHtml(r.leftName)}</span>
+          <span class="confronto-x">X</span>
+          <span class="confronto-right">${escapeHtml(r.rightName)}</span>
+        </td>
+        <td>${escapeHtml(r.resultLabel)}</td>
+      </tr>
+    `).join('');
+
+    const mrLogoUrl = `${window.location.origin}/images/logo-mr.png`;
+    const w = window.open('', '_blank', 'width=1120,height=900');
+    if (!w) {
+      alert('Não foi possível abrir a janela de impressão. Verifique bloqueador de pop-up.');
+      return;
+    }
+    w.document.write(`
+      <!doctype html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="utf-8" />
+        <title>Programação do dia - ${state.event.title}</title>
+        <style>
+          body { font-family: Arial, Helvetica, sans-serif; margin: 18px; color: #111; }
+          .head h1 { margin: 0; font-size: 20px; text-transform: uppercase; }
+          .head p { margin: 3px 0; }
+          table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+          th, td { border: 1px solid #bbb; padding: 6px 8px; font-size: 12px; vertical-align: top; }
+          th { background: #f3f3f3; text-align: left; }
+          .confronto-head { text-align: center; }
+          .confronto-cell {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+            align-items: center;
+            gap: 8px;
+            text-align: center;
+          }
+          .confronto-left {
+            text-align: right;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          .confronto-right {
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          .confronto-x { font-weight: 700; }
+          thead { display: table-header-group; }
+          .print-footer-mr {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border-top: 1px solid #ccc;
+            padding: 4px 8px 2px;
+            background: #fff;
+            font-size: 12px;
+            line-height: 1.2;
+            color: #333;
+          }
+          .print-footer-mr-logo {
+            height: 14px;
+            width: auto;
+            display: block;
+            object-fit: contain;
+          }
+          @media print {
+            @page { margin: 14mm 10mm 14mm 10mm; }
+            body { margin: 0; padding-top: 24mm; padding-bottom: 16mm; }
+            .print-running-head {
+              position: fixed;
+              top: 0;
+              left: 0;
+              right: 0;
+              z-index: 9999;
+              padding: 3.5mm 10mm 2.5mm;
+              background: #fff;
+              border-bottom: 1px solid #ccc;
+            }
+            .print-running-head h1 { margin: 0; font-size: 14px; text-transform: uppercase; line-height: 1.12; }
+            .print-running-head p { margin: 1px 0; font-size: 10.5px; line-height: 1.15; }
+            .print-footer-mr {
+              padding: 2px 10mm 1px;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="head print-running-head">
+          <h1>${escapeHtml(state.event.title)}</h1>
+          <p><strong>Local de Jogos:</strong> ${escapeHtml(state.event.local)}</p>
+          <p><strong>Programação do dia:</strong> ${escapeHtml(dateLabel)}</p>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Hora</th>
+              <th>Rodada</th>
+              <th>Categoria</th>
+              <th>Jogo</th>
+              <th class="confronto-head">Confronto</th>
+              <th>Resultado</th>
+            </tr>
+          </thead>
+          <tbody>${htmlRows}</tbody>
+        </table>
+        <div class="print-footer-mr" aria-hidden="true">
+          <span>Desenvolvido por</span>
+          <img src="${escapeHtml(mrLogoUrl)}" alt="" class="print-footer-mr-logo" />
+        </div>
+      </body>
+      </html>
+    `);
+    w.document.close();
+    w.focus();
+    w.print();
+  };
+
   const tabs: [string, string][] = [['operacao', 'Operação'], ['clubes', 'Clubes'], ['categoria', 'Categoria']];
 
   return (
@@ -422,6 +663,25 @@ function AdminSidebar() {
               </div>
             </div>
           )}
+
+          <div className="field">
+            <label className="label">Impressão de programação do dia</label>
+            <div className="helper">
+              Gera uma folha única com jogos de todas as categorias para a data escolhida.
+            </div>
+            <div className="footer-actions" style={{ alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <input
+                type="date"
+                className="input"
+                style={{ maxWidth: 220 }}
+                value={programacaoDate}
+                onChange={e => setProgramacaoDate(e.target.value)}
+              />
+              <button type="button" className="btn secondary" onClick={handlePrintProgramacaoDia}>
+                Imprimir programação do dia
+              </button>
+            </div>
+          </div>
 
           <div className="footer-actions">
             <button className="btn secondary" onClick={exportBackup}>Exportar backup</button>
