@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect, useRef, useState } from 'react';
 import { useTournament } from '@/context/TournamentContext';
 import { evaluateStructure, collectMatches, visibleMatchCode } from '@/utils/bracketEngine';
 import { ClubFlagMedia } from '@/components/ClubFlagMedia';
@@ -9,14 +9,21 @@ type LiveRow = { categoryId: string; categoryName: string; match: EvaluatedMatch
 export function EmAndamentoPage() {
   const { state, ui, reloadChaveFromServer } = useTournament();
   const [now, setNow] = useState(() => new Date());
+  const categoryOrderRef = useRef<string[]>([]);
+  const LIVE_REFRESH_MS = 30000;
 
-  /** Ao abrir «Em Andamento», funde `matchResults` do servidor em todas as categorias (não só a do separador). */
+  useEffect(() => {
+    categoryOrderRef.current =
+      state.categoryOrder?.length > 0 ? state.categoryOrder : state.categories.map(c => c.id);
+  }, [state.categoryOrder, state.categories]);
+
+  /** Em TV, manter ao vivo sem F5 manual: sincroniza ao abrir e repete em intervalo. */
   useEffect(() => {
     if (ui.page !== 'emAndamento') return;
-    const order =
-      state.categoryOrder?.length > 0 ? state.categoryOrder : state.categories.map(c => c.id);
     let cancelled = false;
-    void (async () => {
+
+    const refreshAll = async () => {
+      const order = categoryOrderRef.current;
       for (const cid of order) {
         if (cancelled) return;
         try {
@@ -25,9 +32,16 @@ export function EmAndamentoPage() {
           /* rede / 404: mantém estado local */
         }
       }
-    })();
+    };
+
+    void refreshAll();
+    const t = setInterval(() => {
+      void refreshAll();
+    }, LIVE_REFRESH_MS);
+
     return () => {
       cancelled = true;
+      clearInterval(t);
     };
   }, [ui.page, reloadChaveFromServer]);
 
