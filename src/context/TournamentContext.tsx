@@ -569,7 +569,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       if (!cat) return s;
       const cats = s.categories.map(c => {
         if (c.id !== categoryId) return c;
-        const merged: MatchState = {
+        let merged: MatchState = {
           score1: '',
           score2: '',
           winner: '',
@@ -579,6 +579,14 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
           ...c.matchResults[matchId],
           ...patch,
         };
+        const hasResult =
+          String(merged.score1 ?? '').trim() !== '' ||
+          String(merged.score2 ?? '').trim() !== '' ||
+          String(merged.winner ?? '').trim() !== '';
+        if (hasResult) {
+          // Regra operacional: jogo com resultado lançado não permanece em "Em andamento".
+          merged = { ...merged, inProgress: false };
+        }
         queueMicrotask(() => {
           void saveJogoToWebhook({
             categoriaId: categoryId,

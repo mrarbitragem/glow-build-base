@@ -20,7 +20,7 @@ export function PrintPageHeader({ event, categoryLabel }: Props) {
         <div><strong>ÁRBITRO GERAL</strong> {event.arbitroGeral}</div>
       </div>
       <div className="print-header-meta">
-        <span>
+        <span className="print-category-name">
           <strong>CATEGORIA</strong> {categoryLabel}
         </span>
         <span>

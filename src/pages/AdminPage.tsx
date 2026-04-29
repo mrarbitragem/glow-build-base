@@ -400,8 +400,8 @@ function AdminSidebar() {
 
     const tablesHtml = chunks
       .map(
-        chunk => `
-        <div class="programacao-sheet">
+        (chunk, sheetIdx) => `
+        <div class="programacao-sheet${sheetIdx > 0 ? ' programacao-sheet--continuacao' : ''}">
           <table class="programacao">
             <thead>${theadHtml}</thead>
             <tbody>${chunk.map(rowHtml).join('')}</tbody>
@@ -494,7 +494,8 @@ function AdminSidebar() {
           @media print {
             /** Margem superior em todas as folhas: cabeçalho fixo do evento não cobre a tabela */
             @page { margin: 22mm 10mm 14mm 10mm; }
-            body { margin: 0; padding: 0 0 14mm 0; }
+            /** Reserva área para o cabeçalho fixo antes da primeira tabela. */
+            body { margin: 0; padding: 16mm 0 14mm 0; }
             /** Cada bloco = até ${PROGRAMACAO_ROWS_PER_PRINT_PAGE} jogos + cabeçalho de colunas; salta de folha */
             .programacao-sheet {
               page-break-after: always;
@@ -503,6 +504,10 @@ function AdminSidebar() {
             .programacao-sheet:last-child {
               page-break-after: auto;
               break-after: auto;
+            }
+            /** Da 2ª folha em diante: mais respiro no topo antes do cabeçalho da tabela. */
+            .programacao-sheet--continuacao {
+              padding-top: 20mm;
             }
             table.programacao thead {
               display: table-header-group !important;
@@ -958,7 +963,7 @@ function AdminCanvas() {
                 <div><strong>ÁRBITRO GERAL</strong> {state.event.arbitroGeral}</div>
               </div>
               <div className="print-header-meta">
-                <span>
+                <span className="print-category-name">
                   <strong>CATEGORIA</strong> {category.name}
                 </span>
                 <span>
@@ -1041,7 +1046,7 @@ function AdminCanvas() {
               <div><strong>ÁRBITRO GERAL</strong> {state.event.arbitroGeral}</div>
             </div>
             <div className="print-header-meta">
-              <span>
+              <span className="print-category-name">
                 <strong>CATEGORIA</strong> {category.name}
               </span>
               <span>

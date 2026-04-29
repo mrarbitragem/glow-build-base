@@ -1110,6 +1110,16 @@
     margin-right: 4px;
     color: #222;
   }
+  .print-category-name {
+    font-size: 15pt;
+    font-weight: 800;
+    color: #111;
+    line-height: 1.1;
+  }
+  .print-category-name strong {
+    font-size: 9pt;
+    margin-right: 6px;
+  }
 
   .card,
   .hero,
