@@ -1,6 +1,5 @@
 import { useTournament } from '@/context/TournamentContext';
 import { getOverallRows } from '@/utils/bracketEngine';
-import { INITIAL_DATA } from '@/data/initialData';
 
 export function GeralPage() {
   const { state, getCategory } = useTournament();
@@ -17,7 +16,7 @@ export function GeralPage() {
         <div className="grid-stats">
           <div className="stat"><small>Clubes cadastrados</small><strong>{rows.length}</strong></div>
           <div className="stat"><small>Clubes pontuando</small><strong>{rows.filter(r => r.total > 0).length}</strong></div>
-          <div className="stat"><small>Pontos do 1º lugar</small><strong>{INITIAL_DATA.pointsByPlace['1']}</strong></div>
+          <div className="stat"><small>Pontos do 1º lugar</small><strong>{state.pointsByPlace['1']}</strong></div>
         </div>
       </div>
 

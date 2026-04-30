@@ -229,6 +229,26 @@ function readShowPlacementPref(): boolean {
   }
 }
 
+function finalizeCategoryClubPointsOverrides(s: TournamentState): TournamentState {
+  const catIds = new Set(s.categories.map(c => c.id));
+  const raw = s.categoryClubPointsOverride;
+  const out: Record<string, Record<string, number>> = {};
+  if (raw && typeof raw === 'object') {
+    for (const [cid, inner] of Object.entries(raw)) {
+      if (!catIds.has(cid)) continue;
+      if (!inner || typeof inner !== 'object') continue;
+      const row: Record<string, number> = {};
+      for (const [bid, val] of Object.entries(inner as Record<string, unknown>)) {
+        const n = typeof val === 'number' ? val : Number(val);
+        if (!Number.isFinite(n)) continue;
+        row[bid] = Math.round(Math.max(0, n));
+      }
+      if (Object.keys(row).length > 0) out[cid] = row;
+    }
+  }
+  return { ...s, categoryClubPointsOverride: out };
+}
+
 function normalizeState(s: TournamentState): TournamentState {
   if (typeof s.event?.title === 'string' && s.event.title.trim() === '4º Interclubes de Beach Tennis FBT') {
     s.event.title = '5º Interclubes de Beach Tennis FBT';
@@ -253,11 +273,13 @@ function normalizeState(s: TournamentState): TournamentState {
     return { ...merged, seeds: dedupeClubSeeds((merged.seeds || []) as (string | null)[]) };
   });
   s.categoryOrder = s.categoryOrder?.length ? s.categoryOrder : s.categories.map(c => c.id);
-  return repairSubEighteenFormat(
-    repairSubFourteenFormat(
-      repairSubSixteenSeeds(
-        repairSixtyFixedByes(
-          repairEmptySubTwelveSeeds(repairEmptyTenClubSixteenSeeds(repairEmptyTwelveClubCategorySeeds(s)))
+  return finalizeCategoryClubPointsOverrides(
+    repairSubEighteenFormat(
+      repairSubFourteenFormat(
+        repairSubSixteenSeeds(
+          repairSixtyFixedByes(
+            repairEmptySubTwelveSeeds(repairEmptyTenClubSixteenSeeds(repairEmptyTwelveClubCategorySeeds(s)))
+          )
         )
       )
     )
@@ -333,6 +355,8 @@ interface TournamentContextType {
    * Opcionalmente grava cada categoria no `save_chave` (n8n/MySQL).
    */
   clearAllChavesForSorteio: (opts?: { saveToServer?: boolean }) => Promise<void>;
+  /** `points === null` remove o ajuste e volta aos pontos da tabela por lugar. */
+  setCategoryClubPointsOverride: (categoryId: string, clubId: string, points: number | null) => void;
 }
 
 const TournamentContext = createContext<TournamentContextType | null>(null);
@@ -660,6 +684,29 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
     });
   }, [updateState]);
 
+  const setCategoryClubPointsOverride = useCallback(
+    (categoryId: string, clubId: string, points: number | null) => {
+      updateState(s => {
+        const cur = { ...(s.categoryClubPointsOverride || {}) };
+        const inner = { ...(cur[categoryId] || {}) };
+        if (points === null) {
+          delete inner[clubId];
+        } else {
+          const n = Math.round(Number(points));
+          if (!Number.isFinite(n) || n < 0) return s;
+          inner[clubId] = n;
+        }
+        if (Object.keys(inner).length === 0) {
+          const rest = { ...cur };
+          delete rest[categoryId];
+          return { ...s, categoryClubPointsOverride: rest };
+        }
+        return { ...s, categoryClubPointsOverride: { ...cur, [categoryId]: inner } };
+      });
+    },
+    [updateState]
+  );
+
   const setRoundDefault = useCallback((categoryId: string, scheduleKey: string, value: string) => {
     updateState(s => {
       const cats = s.categories.map(cat => {
@@ -898,7 +945,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
       saveCategorySeeds,
       addClub, replaceClubs, editClub, changeClubFlag, removeClub, exportBackup, importBackup, resetAll, getCategory,
       reloadChaveFromServer, reloadAllChavesAfterOfficialDraw,
-      refreshClubsFromWebhook, clearAllChavesForSorteio,
+      refreshClubsFromWebhook, clearAllChavesForSorteio, setCategoryClubPointsOverride,
     }}>
       {children}
     </TournamentContext.Provider>

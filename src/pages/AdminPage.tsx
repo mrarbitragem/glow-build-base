@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { useTournament } from '@/context/TournamentContext';
 import {
   evaluateStructure,
@@ -7,6 +7,7 @@ import {
   collectMatches,
   categoryHasTwelveClubNineToTwelvePlayoff,
   visibleMatchCode,
+  getComputedClassification,
 } from '@/utils/bracketEngine';
 import { BracketView, BlockView } from '@/components/BracketView';
 import { DirectNinthPlaceCard } from '@/components/DirectNinthPlaceCard';
@@ -53,6 +54,7 @@ function AdminSidebar() {
     reloadAllChavesAfterOfficialDraw,
     refreshClubsFromWebhook,
     clearAllChavesForSorteio,
+    setCategoryClubPointsOverride,
   } = useTournament();
   const category = getCategory(ui.categoryId);
   const clubNameRef = useRef<HTMLInputElement>(null);
@@ -68,6 +70,56 @@ function AdminSidebar() {
   const [categorySaveError, setCategorySaveError] = useState<string | null>(null);
   const [categorySaveOk, setCategorySaveOk] = useState<string | null>(null);
   const [programacaoDate, setProgramacaoDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [pointsOverrideDraft, setPointsOverrideDraft] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setPointsOverrideDraft({});
+  }, [ui.categoryId]);
+
+  const seededClubIdsForPointsAdjust = useMemo(() => {
+    const ids = new Set<string>();
+    for (const seed of category.seeds) {
+      if (typeof seed === 'string' && seed.trim()) ids.add(seed.trim());
+    }
+    return [...ids].sort((a, b) => {
+      const na = state.clubs.find(c => c.id === a)?.name || a;
+      const nb = state.clubs.find(c => c.id === b)?.name || b;
+      return na.localeCompare(nb, 'pt-BR');
+    });
+  }, [category.seeds, state.clubs]);
+
+  const classificationPlaceByClub = useMemo(() => {
+    const ranking = getComputedClassification(category, state.clubs);
+    return new Map(ranking.map(r => [r.clubId, r]));
+  }, [category, state.clubs]);
+
+  const handleApplyCategoryPointsOverride = (clubId: string) => {
+    const raw = (pointsOverrideDraft[clubId] ?? '').trim();
+    if (raw === '') {
+      alert('Indique um número inteiro ≥ 0 ou use «Usar tabela».');
+      return;
+    }
+    const n = Math.round(Number(raw));
+    if (!Number.isFinite(n) || n < 0) {
+      alert('Valor inválido.');
+      return;
+    }
+    setCategoryClubPointsOverride(category.id, clubId, n);
+    setPointsOverrideDraft(d => {
+      const next = { ...d };
+      delete next[clubId];
+      return next;
+    });
+  };
+
+  const handleClearCategoryPointsOverride = (clubId: string) => {
+    setCategoryClubPointsOverride(category.id, clubId, null);
+    setPointsOverrideDraft(d => {
+      const next = { ...d };
+      delete next[clubId];
+      return next;
+    });
+  };
 
   const handleReloadChaveThis = async (afterOfficialDraw: boolean) => {
     const label = category.name;
@@ -820,6 +872,74 @@ function AdminSidebar() {
           <div className="helper">
             Altere as posições livremente e use «Enviar posições da chave» no final para gravar tudo de uma vez.
           </div>
+          {seededClubIdsForPointsAdjust.length > 0 && (
+            <div className="field">
+              <label className="label">Pontos na geral (ajuste por clube)</label>
+              <div className="helper">
+                Por omissão usam-se os pontos da tabela conforme o lugar na chave. Aqui pode definir outro valor só
+                nesta categoria (por exemplo <strong>0</strong> para não pontuar). «Usar tabela» remove o ajuste.
+              </div>
+              <div className="stack" style={{ gap: 10 }}>
+                {seededClubIdsForPointsAdjust.map(clubId => {
+                  const cr = classificationPlaceByClub.get(clubId);
+                  const place = cr?.place;
+                  const tabelaPts = place != null ? state.pointsByPlace[String(place)] ?? 0 : null;
+                  const overrideVal = state.categoryClubPointsOverride?.[category.id]?.[clubId];
+                  const draft = pointsOverrideDraft[clubId];
+                  const inputValue = draft !== undefined ? draft : overrideVal !== undefined ? String(overrideVal) : '';
+                  const nm = state.clubs.find(c => c.id === clubId)?.name || clubId;
+                  return (
+                    <div
+                      key={clubId}
+                      className="slot-item"
+                      style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        alignItems: 'center',
+                        gap: '8px',
+                      }}
+                    >
+                      <div style={{ flex: '1 1 200px', minWidth: 0 }}>
+                        <strong>{nm}</strong>
+                        <div className="helper" style={{ marginTop: 2 }}>
+                          {place != null
+                            ? `${place}º na categoria · tabela: ${tabelaPts}`
+                            : 'Ainda sem lugar na classificação — o ajuste vale assim que houver.'}
+                        </div>
+                      </div>
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        className="input"
+                        style={{ width: 110 }}
+                        value={inputValue}
+                        placeholder={tabelaPts != null ? String(tabelaPts) : '—'}
+                        onChange={e =>
+                          setPointsOverrideDraft(prev => ({ ...prev, [clubId]: e.target.value }))
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="btn small"
+                        onClick={() => handleApplyCategoryPointsOverride(clubId)}
+                      >
+                        Aplicar
+                      </button>
+                      <button
+                        type="button"
+                        className="btn secondary small"
+                        disabled={overrideVal === undefined}
+                        onClick={() => handleClearCategoryPointsOverride(clubId)}
+                      >
+                        Usar tabela
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <div className="field">
             <label className="label">Categoria em edição</label>
             <input className="input" disabled value={category.name} />

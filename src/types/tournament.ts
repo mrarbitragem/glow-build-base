@@ -23,6 +23,11 @@ export interface EventInfo {
 export interface TournamentState {
   event: EventInfo;
   pointsByPlace: Record<string, number>;
+  /**
+   * Pontos na geral por categoria e clube, em substituição aos `pointsByPlace` da posição obtida na chave.
+   * Ex.: `{ a: { "club-id": 0 } }` zera os pontos do clube na categoria A.
+   */
+  categoryClubPointsOverride: Record<string, Record<string, number>>;
   clubs: Club[];
   categories: Category[];
   categoryOrder: string[];

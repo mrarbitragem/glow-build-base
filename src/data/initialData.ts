@@ -82,6 +82,7 @@ export const INITIAL_DATA: TournamentState = {
     "1": 40, "2": 36, "3": 32, "4": 30, "5": 28, "6": 26, "7": 24, "8": 22,
     "9": 20, "10": 18, "11": 15, "12": 13, "13": 11
   },
+  categoryClubPointsOverride: {},
   /** Só arranque / offline até o webhook `select_club` devolver a lista real. */
   clubs: [
     { id: "iate-clube", name: "IATE CLUBE", flag: "" },
