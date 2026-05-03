@@ -22,6 +22,8 @@ type ProgramacaoRow = {
   categoryName: string;
   gameLabel: string;
   categorySort: number;
+  /** Classe CSS na impressão (cor por categoria). */
+  categoryPrintClass: string;
   gameSort: number;
   leftName: string;
   rightName: string;
@@ -29,7 +31,7 @@ type ProgramacaoRow = {
 };
 
 /** Impressão da programação do dia: nova folha e novo cabeçalho de colunas a cada N jogos. */
-const PROGRAMACAO_ROWS_PER_PRINT_PAGE = 31;
+const PROGRAMACAO_ROWS_PER_PRINT_PAGE = 26;
 
 function AdminSidebar() {
   const {
@@ -376,13 +378,15 @@ function AdminSidebar() {
         const gameLabel = Number.isFinite(gameNumber) ? `J${gameNumber}` : (code || m.id);
         const s1 = String(m.saved.score1 ?? '').trim();
         const s2 = String(m.saved.score2 ?? '').trim();
+        const catIdx = categorySortById.get(cat.id) ?? 0;
         rows.push({
           dateKey: dtParts.dateKey,
           timeLabel: dtParts.timeLabel,
           roundLabel: shortRoundLabel(scheduleLabel(m)),
           categoryName: cat.name,
           gameLabel,
-          categorySort: categorySortById.get(cat.id) ?? 999,
+          categorySort: catIdx,
+          categoryPrintClass: `programacao-row-cat-${catIdx % 12}`,
           gameSort: Number.isFinite(gameNumber) ? gameNumber : 9999,
           leftName: m.left.name || 'Aguardando',
           rightName: m.right.name || 'Aguardando',
@@ -421,16 +425,25 @@ function AdminSidebar() {
       return `${d.toLocaleDateString('pt-BR')} - ${wd.charAt(0).toUpperCase()}${wd.slice(1)}`;
     })();
 
+    const isProgFeederPlaceholder = (s: string) => /^(Venc\.|Perd\.)/i.test(String(s || '').trim());
+    const programacaoConfrontoSideHtml = (s: string) => {
+      const t = String(s || '').trim();
+      if (isProgFeederPlaceholder(t)) {
+        return `<strong class="programacao-feeder">${escapeHtml(t)}</strong>`;
+      }
+      return escapeHtml(t);
+    };
+
     const rowHtml = (r: ProgramacaoRow) => `
-      <tr>
+      <tr class="${escapeHtml(r.categoryPrintClass)}">
         <td>${escapeHtml(r.timeLabel)}</td>
         <td>${escapeHtml(r.roundLabel)}</td>
-        <td>${escapeHtml(r.categoryName)}</td>
-        <td>${escapeHtml(r.gameLabel)}</td>
+        <td class="programacao-categoria">${escapeHtml(r.categoryName)}</td>
+        <td class="programacao-jogo">${escapeHtml(r.gameLabel)}</td>
         <td class="confronto-cell">
-          <span class="confronto-left">${escapeHtml(r.leftName)}</span>
+          <span class="confronto-left">${programacaoConfrontoSideHtml(r.leftName)}</span>
           <span class="confronto-x">X</span>
-          <span class="confronto-right">${escapeHtml(r.rightName)}</span>
+          <span class="confronto-right">${programacaoConfrontoSideHtml(r.rightName)}</span>
         </td>
         <td>${escapeHtml(r.resultLabel)}</td>
       </tr>`;
@@ -520,6 +533,34 @@ function AdminSidebar() {
             text-overflow: ellipsis;
           }
           .confronto-x { flex: 0 0 auto; font-weight: 700; }
+          .programacao-feeder {
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 4px;
+            background: linear-gradient(180deg, #fff8e1 0%, #ffe082 100%);
+            color: #3e2723;
+            border: 1px solid #c9a012;
+            letter-spacing: 0.02em;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .programacao-jogo {
+            font-weight: 800;
+            text-align: center;
+          }
+          .programacao-categoria { font-weight: 600; }
+          tr.programacao-row-cat-0 td { background: #fde8ef; color: #111; }
+          tr.programacao-row-cat-1 td { background: #e4f2fd; color: #111; }
+          tr.programacao-row-cat-2 td { background: #e6f8e9; color: #111; }
+          tr.programacao-row-cat-3 td { background: #fff3d9; color: #111; }
+          tr.programacao-row-cat-4 td { background: #eee6fc; color: #111; }
+          tr.programacao-row-cat-5 td { background: #dff7f3; color: #111; }
+          tr.programacao-row-cat-6 td { background: #fce8f4; color: #111; }
+          tr.programacao-row-cat-7 td { background: #e8ecf8; color: #111; }
+          tr.programacao-row-cat-8 td { background: #f2f9e5; color: #111; }
+          tr.programacao-row-cat-9 td { background: #fdeee8; color: #111; }
+          tr.programacao-row-cat-10 td { background: #e6f0ff; color: #111; }
+          tr.programacao-row-cat-11 td { background: #e8ecea; color: #111; }
           .print-footer-mr {
             position: fixed;
             left: 0;
@@ -1050,6 +1091,13 @@ function AdminCanvas() {
   const printedAt = new Date().toLocaleString('pt-BR');
   const seededClubs = countRealSeeds(category.seeds);
   const mainBracketPrintGte8 = seededClubs >= 8;
+  /** Menos de 9 clubes: na impressão, ampliar a chave principal para preencher melhor o A4. */
+  const mainBracketPrintFillA4 =
+    seededClubs < 9
+      ? category.slots <= 8
+        ? ' bracket-print-fill-a4 bracket-print-fill-a4--8slot'
+        : ' bracket-print-fill-a4 bracket-print-fill-a4--16slot'
+      : '';
 
   const handleMatchClick = (matchId: string) => {
     selectMatch(matchId);
@@ -1091,7 +1139,9 @@ function AdminCanvas() {
                 </span>
               </div>
             </div>
-            <div className={`bracket-box main${mainBracketPrintGte8 ? ' bracket-print-gte8' : ''}`}>
+            <div
+              className={`bracket-box main${mainBracketPrintGte8 ? ' bracket-print-gte8' : ''}${mainBracketPrintFillA4}`}
+            >
               <BracketView
                 rounds={struct.mainRounds}
                 kind="main"

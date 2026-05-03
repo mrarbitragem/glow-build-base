@@ -36,6 +36,12 @@ export function PrincipalPage() {
   );
   const showPosUnderChaves = !ui.showPlacementBrackets;
   const mainBracketPrintGte8 = realClubs >= 8;
+  const mainBracketPrintFillA4 =
+    realClubs < 9
+      ? category.slots <= 8
+        ? ' bracket-print-fill-a4 bracket-print-fill-a4--8slot'
+        : ' bracket-print-fill-a4 bracket-print-fill-a4--16slot'
+      : '';
 
   return (
     <div className="page">
@@ -56,7 +62,9 @@ export function PrincipalPage() {
         </div>
       </div>
 
-      <div className={`bracket-box main${mainBracketPrintGte8 ? ' bracket-print-gte8' : ''}`}>
+      <div
+        className={`bracket-box main${mainBracketPrintGte8 ? ' bracket-print-gte8' : ''}${mainBracketPrintFillA4}`}
+      >
         <BracketView
           rounds={struct.mainRounds}
           kind="main"

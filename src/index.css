@@ -1139,12 +1139,24 @@
     border: 0;
   }
 
-  /* Chave principal: categorias com ≥8 clubes — A4, tipos ≥14pt, zoom ajustado */
+  /* Chave principal: zoom base; com <9 clubes preenche melhor o A4 (8 vs 16 vagas). */
   .bracket-box.main {
     zoom: 0.56;
   }
+  .bracket-box.main.bracket-print-fill-a4--8slot {
+    zoom: 0.9;
+  }
+  .bracket-box.main.bracket-print-fill-a4--16slot {
+    zoom: 0.74;
+  }
   .bracket-box.main.bracket-print-gte8 {
     zoom: 0.68;
+  }
+  .bracket-box.main.bracket-print-gte8.bracket-print-fill-a4--8slot {
+    zoom: 0.92;
+  }
+  .bracket-box.main.bracket-print-gte8.bracket-print-fill-a4--16slot {
+    zoom: 0.76;
   }
   .bracket-box.main.bracket-print-gte8 .team-name,
   .bracket-box.main.bracket-print-gte8 .score,
