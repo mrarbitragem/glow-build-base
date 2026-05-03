@@ -609,6 +609,16 @@ export function evaluateStructure(category: Category, clubs: Club[]): StructureR
   return { mainRounds: mainMatches, placementBlocks, placements, totalGames: gameCounter, directPlacesFromR1Playables };
 }
 
+export function isClubDisqualifiedInCategory(
+  state: TournamentState,
+  categoryId: string,
+  clubId: string
+): boolean {
+  const list = state.categoryClubDisqualified?.[categoryId];
+  if (!list || !Array.isArray(list)) return false;
+  return list.includes(clubId);
+}
+
 /** Pontos na geral para um clube colocado numa categoria (override manual ou tabela por lugar). */
 export function getEffectivePointsForPlacedClub(
   state: TournamentState,
@@ -616,6 +626,7 @@ export function getEffectivePointsForPlacedClub(
   clubId: string,
   place: number
 ): number {
+  if (isClubDisqualifiedInCategory(state, categoryId, clubId)) return 0;
   const map = state.categoryClubPointsOverride?.[categoryId];
   if (map && Object.prototype.hasOwnProperty.call(map, clubId)) {
     const v = map[clubId];
@@ -654,8 +665,9 @@ export function getOverallRows(state: TournamentState): OverallRow[] {
       const defaultPts = state.pointsByPlace[String(row.place)] || 0;
       const map = state.categoryClubPointsOverride?.[cat.id];
       const hasOverride = !!(map && Object.prototype.hasOwnProperty.call(map, row.clubId));
+      const dq = isClubDisqualifiedInCategory(state, cat.id, row.clubId);
       const points = getEffectivePointsForPlacedClub(state, cat.id, row.clubId, row.place);
-      if (!hasOverride && !defaultPts) return;
+      if (!dq && !hasOverride && !defaultPts) return;
       totals[row.clubId].perCat[cat.id] = points;
       totals[row.clubId].total += points;
     });

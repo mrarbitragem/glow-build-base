@@ -51,6 +51,7 @@ describe('mergeChaveIntoState', () => {
       event: { title: 'T', local: 'L', arbitroGeral: 'A' },
       pointsByPlace: {},
       categoryClubPointsOverride: {},
+      categoryClubDisqualified: {},
       clubs: [],
       categoryOrder: ['p'],
       categories: [
@@ -89,6 +90,7 @@ describe('mergeChaveIntoState', () => {
       event: { title: 'T', local: 'L', arbitroGeral: 'A' },
       pointsByPlace: {},
       categoryClubPointsOverride: {},
+      categoryClubDisqualified: {},
       clubs: [],
       categoryOrder: ['sub-14'],
       categories: [
@@ -117,6 +119,7 @@ describe('mergeChaveIntoState', () => {
       event: { title: 'T', local: 'L', arbitroGeral: 'A' },
       pointsByPlace: {},
       categoryClubPointsOverride: {},
+      categoryClubDisqualified: {},
       clubs: [],
       categoryOrder: ['sub-14'],
       categories: [
@@ -145,6 +148,7 @@ describe('mergeChaveIntoState', () => {
       event: { title: 'T', local: 'L', arbitroGeral: 'A' },
       pointsByPlace: {},
       categoryClubPointsOverride: {},
+      categoryClubDisqualified: {},
       clubs: [],
       categoryOrder: ['p'],
       categories: [

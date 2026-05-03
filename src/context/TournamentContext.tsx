@@ -249,6 +249,24 @@ function finalizeCategoryClubPointsOverrides(s: TournamentState): TournamentStat
   return { ...s, categoryClubPointsOverride: out };
 }
 
+function finalizeCategoryClubDisqualified(s: TournamentState): TournamentState {
+  const catIds = new Set(s.categories.map(c => c.id));
+  const clubIds = new Set(s.clubs.map(c => c.id));
+  const raw = s.categoryClubDisqualified;
+  const out: Record<string, string[]> = {};
+  if (raw && typeof raw === 'object') {
+    for (const [cid, list] of Object.entries(raw)) {
+      if (!catIds.has(cid)) continue;
+      if (!Array.isArray(list)) continue;
+      const uniq = [...new Set(list.map(x => String(x).trim()).filter(Boolean))].filter(id =>
+        clubIds.has(id)
+      );
+      if (uniq.length > 0) out[cid] = uniq;
+    }
+  }
+  return { ...s, categoryClubDisqualified: out };
+}
+
 function normalizeState(s: TournamentState): TournamentState {
   if (typeof s.event?.title === 'string' && s.event.title.trim() === '4º Interclubes de Beach Tennis FBT') {
     s.event.title = '5º Interclubes de Beach Tennis FBT';
@@ -273,12 +291,14 @@ function normalizeState(s: TournamentState): TournamentState {
     return { ...merged, seeds: dedupeClubSeeds((merged.seeds || []) as (string | null)[]) };
   });
   s.categoryOrder = s.categoryOrder?.length ? s.categoryOrder : s.categories.map(c => c.id);
-  return finalizeCategoryClubPointsOverrides(
-    repairSubEighteenFormat(
-      repairSubFourteenFormat(
-        repairSubSixteenSeeds(
-          repairSixtyFixedByes(
-            repairEmptySubTwelveSeeds(repairEmptyTenClubSixteenSeeds(repairEmptyTwelveClubCategorySeeds(s)))
+  return finalizeCategoryClubDisqualified(
+    finalizeCategoryClubPointsOverrides(
+      repairSubEighteenFormat(
+        repairSubFourteenFormat(
+          repairSubSixteenSeeds(
+            repairSixtyFixedByes(
+              repairEmptySubTwelveSeeds(repairEmptyTenClubSixteenSeeds(repairEmptyTwelveClubCategorySeeds(s)))
+            )
           )
         )
       )

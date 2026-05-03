@@ -1,5 +1,10 @@
 import { Category, Club } from '@/types/tournament';
-import { getComputedClassification, countRealSeeds, getEffectivePointsForPlacedClub } from '@/utils/bracketEngine';
+import {
+  getComputedClassification,
+  countRealSeeds,
+  getEffectivePointsForPlacedClub,
+  isClubDisqualifiedInCategory,
+} from '@/utils/bracketEngine';
 import { useTournament } from '@/context/TournamentContext';
 
 interface Props {
@@ -27,6 +32,7 @@ export function ClassificationTable({ category, clubs }: Props) {
           {Array.from({ length: totalPlaces }, (_, index) => {
             const place = index + 1;
             const row = rowMap.get(place);
+            const dq = !!(row && isClubDisqualifiedInCategory(state, category.id, row.clubId));
             const hasOverride = !!(
               row &&
               overrideMap &&
@@ -35,6 +41,7 @@ export function ClassificationTable({ category, clubs }: Props) {
             const eff = row ? getEffectivePointsForPlacedClub(state, category.id, row.clubId, place) : 0;
             const pointsCell = (() => {
               if (!row) return '';
+              if (dq) return 'Desclassificado';
               if (!hasOverride && !eff) return '';
               return `${eff}${hasOverride ? ' (aj.)' : ''}`;
             })();

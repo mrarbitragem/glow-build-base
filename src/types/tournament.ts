@@ -28,6 +28,11 @@ export interface TournamentState {
    * Ex.: `{ a: { "club-id": 0 } }` zera os pontos do clube na categoria A.
    */
   categoryClubPointsOverride: Record<string, Record<string, number>>;
+  /**
+   * Clubes desclassificados na categoria: aparecem na classificação mas não pontuam na geral (sempre 0).
+   * Ex.: `{ a: ["kale-praia"] }`.
+   */
+  categoryClubDisqualified: Record<string, string[]>;
   clubs: Club[];
   categories: Category[];
   categoryOrder: string[];

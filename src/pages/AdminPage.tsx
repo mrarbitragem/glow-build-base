@@ -8,6 +8,7 @@ import {
   categoryHasTwelveClubNineToTwelvePlayoff,
   visibleMatchCode,
   getComputedClassification,
+  isClubDisqualifiedInCategory,
 } from '@/utils/bracketEngine';
 import { BracketView, BlockView } from '@/components/BracketView';
 import { DirectNinthPlaceCard } from '@/components/DirectNinthPlaceCard';
@@ -929,6 +930,7 @@ function AdminSidebar() {
                   const draft = pointsOverrideDraft[clubId];
                   const inputValue = draft !== undefined ? draft : overrideVal !== undefined ? String(overrideVal) : '';
                   const nm = state.clubs.find(c => c.id === clubId)?.name || clubId;
+                  const dq = isClubDisqualifiedInCategory(state, category.id, clubId);
                   return (
                     <div
                       key={clubId}
@@ -943,9 +945,16 @@ function AdminSidebar() {
                       <div style={{ flex: '1 1 200px', minWidth: 0 }}>
                         <strong>{nm}</strong>
                         <div className="helper" style={{ marginTop: 2 }}>
-                          {place != null
-                            ? `${place}º na categoria · tabela: ${tabelaPts}`
-                            : 'Ainda sem lugar na classificação — o ajuste vale assim que houver.'}
+                          {dq ? (
+                            <>
+                              Desclassificado nesta categoria — <strong>0 pontos</strong> na geral (definição do
+                              evento).
+                            </>
+                          ) : place != null ? (
+                            `${place}º na categoria · tabela: ${tabelaPts}`
+                          ) : (
+                            'Ainda sem lugar na classificação — o ajuste vale assim que houver.'
+                          )}
                         </div>
                       </div>
                       <input
@@ -956,6 +965,7 @@ function AdminSidebar() {
                         style={{ width: 110 }}
                         value={inputValue}
                         placeholder={tabelaPts != null ? String(tabelaPts) : '—'}
+                        disabled={dq}
                         onChange={e =>
                           setPointsOverrideDraft(prev => ({ ...prev, [clubId]: e.target.value }))
                         }
@@ -963,6 +973,7 @@ function AdminSidebar() {
                       <button
                         type="button"
                         className="btn small"
+                        disabled={dq}
                         onClick={() => handleApplyCategoryPointsOverride(clubId)}
                       >
                         Aplicar
@@ -970,7 +981,7 @@ function AdminSidebar() {
                       <button
                         type="button"
                         className="btn secondary small"
-                        disabled={overrideVal === undefined}
+                        disabled={dq || overrideVal === undefined}
                         onClick={() => handleClearCategoryPointsOverride(clubId)}
                       >
                         Usar tabela

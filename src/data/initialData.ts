@@ -83,6 +83,8 @@ export const INITIAL_DATA: TournamentState = {
     "9": 20, "10": 18, "11": 15, "12": 13, "13": 11
   },
   categoryClubPointsOverride: {},
+  /** KALE PRAIA desclassificado na categoria A — sem pontuação na geral. */
+  categoryClubDisqualified: { a: ['kale-praia'] },
   /** Só arranque / offline até o webhook `select_club` devolver a lista real. */
   clubs: [
     { id: "iate-clube", name: "IATE CLUBE", flag: "" },

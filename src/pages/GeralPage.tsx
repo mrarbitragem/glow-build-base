@@ -1,5 +1,5 @@
 import { useTournament } from '@/context/TournamentContext';
-import { getOverallRows } from '@/utils/bracketEngine';
+import { getOverallRows, isClubDisqualifiedInCategory } from '@/utils/bracketEngine';
 
 export function GeralPage() {
   const { state, getCategory } = useTournament();
@@ -40,7 +40,13 @@ export function GeralPage() {
                   <td className="num">{idx + 1}º</td>
                   <td>{row.name}</td>
                   {state.categoryOrder.map(id => (
-                    <td key={id}>{row.perCat[id] || ''}</td>
+                    <td key={id}>
+                      {isClubDisqualifiedInCategory(state, id, row.clubId)
+                        ? 'Desclassif.'
+                        : row.perCat[id] !== undefined
+                          ? row.perCat[id]
+                          : ''}
+                    </td>
                   ))}
                   <td><strong>{row.total || ''}</strong></td>
                 </tr>
