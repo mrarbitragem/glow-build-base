@@ -50,6 +50,7 @@ describe('mergeChaveIntoState', () => {
     const prev: TournamentState = {
       event: { title: 'T', local: 'L', arbitroGeral: 'A' },
       pointsByPlace: {},
+      categoryPointsByPlace: {},
       categoryClubPointsOverride: {},
       categoryClubDisqualified: {},
       clubs: [],
@@ -89,6 +90,7 @@ describe('mergeChaveIntoState', () => {
     const prev: TournamentState = {
       event: { title: 'T', local: 'L', arbitroGeral: 'A' },
       pointsByPlace: {},
+      categoryPointsByPlace: {},
       categoryClubPointsOverride: {},
       categoryClubDisqualified: {},
       clubs: [],
@@ -118,6 +120,7 @@ describe('mergeChaveIntoState', () => {
     const prev: TournamentState = {
       event: { title: 'T', local: 'L', arbitroGeral: 'A' },
       pointsByPlace: {},
+      categoryPointsByPlace: {},
       categoryClubPointsOverride: {},
       categoryClubDisqualified: {},
       clubs: [],
@@ -147,6 +150,7 @@ describe('mergeChaveIntoState', () => {
     const prev: TournamentState = {
       event: { title: 'T', local: 'L', arbitroGeral: 'A' },
       pointsByPlace: {},
+      categoryPointsByPlace: {},
       categoryClubPointsOverride: {},
       categoryClubDisqualified: {},
       clubs: [],
