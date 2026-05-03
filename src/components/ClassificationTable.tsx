@@ -10,9 +10,11 @@ import { useTournament } from '@/context/TournamentContext';
 interface Props {
   category: Category;
   clubs: Club[];
+  /** Título da secção (ex.: impressão logo após a chave principal). */
+  heading?: string;
 }
 
-export function ClassificationTable({ category, clubs }: Props) {
+export function ClassificationTable({ category, clubs, heading = 'Classificação da categoria' }: Props) {
   const { state } = useTournament();
   const rows = getComputedClassification(category, clubs);
   const rowMap = new Map(rows.map(r => [r.place, r]));
@@ -23,7 +25,7 @@ export function ClassificationTable({ category, clubs }: Props) {
 
   return (
     <div className="classification">
-      <h3>Classificação da categoria</h3>
+      <h3>{heading}</h3>
       <table className="table">
         <thead>
           <tr><th>Posição</th><th>Clube</th><th>Pontos</th></tr>

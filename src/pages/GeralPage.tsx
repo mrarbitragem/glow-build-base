@@ -1,5 +1,6 @@
 import { useTournament } from '@/context/TournamentContext';
 import { getOverallRows, isClubDisqualifiedInCategory } from '@/utils/bracketEngine';
+import { PartialClassificationNotice } from '@/components/PartialClassificationNotice';
 
 export function GeralPage() {
   const { state, getCategory } = useTournament();
@@ -19,6 +20,8 @@ export function GeralPage() {
           <div className="stat"><small>Pontos do 1º lugar</small><strong>{state.pointsByPlace['1']}</strong></div>
         </div>
       </div>
+
+      <PartialClassificationNotice />
 
       <div className="card panel">
         {!hasPoints && <div className="empty-state" />}

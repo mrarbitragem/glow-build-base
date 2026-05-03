@@ -4,7 +4,7 @@ import { useTheme } from '@/hooks/useTheme';
 export function TopBar() {
   const { state, ui, setPage, setShowLogin, logout } = useTournament();
   const { theme, toggle } = useTheme();
-  const canPrint = ui.page === 'admin';
+  const canPrint = ui.page === 'admin' || (ui.isAdmin && ui.page === 'classificacoes');
 
   const openAcesso = () => {
     if (ui.isAdmin) {
@@ -18,6 +18,7 @@ export function TopBar() {
     { page: 'principal', label: 'Chaves' },
     { page: 'emAndamento', label: 'Em Andamento' },
     ...(ui.showPlacementBrackets ? [{ page: 'disputas' as const, label: 'Posições' }] : []),
+    ...(ui.isAdmin ? [{ page: 'classificacoes' as const, label: 'Por categoria' }] : []),
     { page: 'geral', label: 'Classificação geral' },
   ];
 

@@ -44,7 +44,7 @@ export function PrincipalPage() {
       : '';
 
   return (
-    <div className="page">
+    <div className="page page-principal-chaves">
       <PrintPageHeader event={state.event} categoryLabel={category.name} />
       <div className="hero card main">
         <div>
@@ -70,6 +70,14 @@ export function PrincipalPage() {
           kind="main"
           scopeKey="main"
           finalTitle="Campeão da categoria"
+        />
+      </div>
+
+      <div className="classification-print-under-main">
+        <ClassificationTable
+          category={category}
+          clubs={state.clubs}
+          heading="Classificação e pontos (conferência)"
         />
       </div>
 
@@ -105,7 +113,9 @@ export function PrincipalPage() {
         </>
       )}
 
-      <ClassificationTable category={category} clubs={state.clubs} />
+      <div className="classification-scroll-tail">
+        <ClassificationTable category={category} clubs={state.clubs} />
+      </div>
     </div>
   );
 }

@@ -699,6 +699,24 @@
 }
 .classification h3 { margin: 0 0 12px; font-size: 1rem; }
 
+.classificacoes-por-categoria-list {
+  gap: 18px;
+}
+.classificacoes-categoria-section {
+  margin: 0;
+}
+.classificacoes-categoria-title {
+  margin: 0 0 10px;
+  font-size: 1.12rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/** Em ecrã fica oculto; em `@media print` passa visível (conferência junto à chave principal). */
+.classification-print-under-main {
+  display: none !important;
+}
+
 /* Table */
 .table { width: 100%; border-collapse: collapse; }
 .table th, .table td { padding: 10px 8px; border-bottom: 1px solid hsl(var(--border)); text-align: left; }
@@ -898,16 +916,32 @@
 .login h2 { margin: 0 0 8px; }
 .login p { margin: 0 0 16px; color: hsl(var(--muted-foreground)); }
 .error { color: hsl(var(--destructive)); font-size: 0.88rem; }
-.admin-pending-notice {
+.admin-pending-notice,
+.partial-classification-notice {
   font-size: 0.88rem;
   line-height: 1.45;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border-radius: 12px;
   border: 1px solid hsl(var(--warning) / 35%);
   background: hsl(var(--warning) / 10%);
   color: hsl(var(--foreground));
 }
-.admin-pending-notice strong { color: hsl(var(--warning)); }
+.admin-pending-notice strong,
+.partial-classification-notice strong {
+  color: hsl(var(--warning));
+}
+.partial-classification-notice__lead {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+.partial-classification-notice__body {
+  margin: 0;
+  font-size: 0.88rem;
+  color: hsl(var(--foreground));
+}
+.partial-classification-notice {
+  margin-bottom: 16px;
+}
 
 /* Round schedule */
 .round-schedule-list { display: grid; gap: 10px; }
@@ -1030,7 +1064,6 @@
   .topbar-pills,
   .theme-toggle,
   .tab,
-  .classification,
   .modal-backdrop,
   .login-backdrop,
   .admin-sidebar,
@@ -1208,5 +1241,45 @@
     break-inside: avoid;
     page-break-inside: avoid;
     margin-bottom: 12px;
+  }
+
+  /** Tabela de conferência: visível no papel; bloco após a chave principal só na impressão. */
+  .classification {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    padding: 10px 12px;
+    margin-top: 8px;
+    border: 1px solid #ccc;
+    box-shadow: none !important;
+    background: #fff !important;
+  }
+  .classification h3 {
+    font-size: 11pt;
+    margin-bottom: 8px;
+  }
+  .classification .table th,
+  .classification .table td {
+    padding: 5px 6px;
+    font-size: 10pt;
+  }
+
+  .classification-print-under-main {
+    display: block !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .page-principal-chaves .classification-scroll-tail,
+  .admin-print-main .classification-scroll-tail {
+    display: none !important;
+  }
+
+  .partial-classification-notice {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    border-color: #c9a227 !important;
+    background: #fffbeb !important;
   }
 }

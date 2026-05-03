@@ -13,6 +13,7 @@ import {
 } from '@/utils/bracketEngine';
 import { BracketView, BlockView } from '@/components/BracketView';
 import { DirectNinthPlaceCard } from '@/components/DirectNinthPlaceCard';
+import { ClassificationTable } from '@/components/ClassificationTable';
 import { ClubFlagMedia } from '@/components/ClubFlagMedia';
 import { fileToDataUrl } from '@/utils/helpers';
 import { BlockResult, EvaluatedMatch } from '@/types/tournament';
@@ -1165,6 +1166,13 @@ function AdminCanvas() {
                 onMatchClick={handleMatchClick}
               />
             </div>
+            <div className="classification-print-under-main">
+              <ClassificationTable
+                category={category}
+                clubs={state.clubs}
+                heading="Classificação e pontos (conferência)"
+              />
+            </div>
           </div>
           <div className="admin-print-after-main">
             {struct.directPlacesFromR1Playables !== undefined && (
@@ -1218,6 +1226,9 @@ function AdminCanvas() {
                   onMatchClick={handleMatchClick}
                 />
               ))}
+            <div className="classification-scroll-tail">
+              <ClassificationTable category={category} clubs={state.clubs} />
+            </div>
           </div>
         </>
       ) : (
@@ -1289,6 +1300,9 @@ function AdminCanvas() {
               Ainda não há mini-chaves de posição nesta categoria. Confirme o sorteio e os clubes em cada vaga.
             </p>
           ) : null}
+          <div className="classification-scroll-tail">
+            <ClassificationTable category={category} clubs={state.clubs} />
+          </div>
         </>
       )}
     </div>

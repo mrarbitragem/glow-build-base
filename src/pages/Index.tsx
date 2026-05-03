@@ -8,6 +8,7 @@ import { PrincipalPage } from '@/pages/PrincipalPage';
 import { EmAndamentoPage } from '@/pages/EmAndamentoPage';
 import { DisputasPage } from '@/pages/DisputasPage';
 import { GeralPage } from '@/pages/GeralPage';
+import { ClassificacoesPorCategoriaPage } from '@/pages/ClassificacoesPorCategoriaPage';
 import { AdminPage } from '@/pages/AdminPage';
 import { AppFooter } from '@/components/AppFooter';
 
@@ -20,6 +21,12 @@ function AppContent() {
     }
   }, [ui.page, ui.showPlacementBrackets, setPage]);
 
+  useEffect(() => {
+    if (ui.page === 'classificacoes' && !ui.isAdmin) {
+      setPage('principal');
+    }
+  }, [ui.page, ui.isAdmin, setPage]);
+
   return (
     <div className="app">
       <TopBar />
@@ -28,6 +35,7 @@ function AppContent() {
         {ui.page === 'principal' && <PrincipalPage />}
         {ui.page === 'emAndamento' && <EmAndamentoPage />}
         {ui.page === 'disputas' && <DisputasPage />}
+        {ui.page === 'classificacoes' && ui.isAdmin && <ClassificacoesPorCategoriaPage />}
         {ui.page === 'geral' && <GeralPage />}
         {ui.page === 'admin' && <AdminPage />}
       </div>

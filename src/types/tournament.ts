@@ -150,7 +150,13 @@ export interface OverallRow {
   perCat: Record<string, number>;
 }
 
-export type PageType = 'principal' | 'disputas' | 'emAndamento' | 'geral' | 'admin';
+export type PageType =
+  | 'principal'
+  | 'disputas'
+  | 'emAndamento'
+  | 'classificacoes'
+  | 'geral'
+  | 'admin';
 export type AdminPanel = 'operacao' | 'clubes' | 'categoria';
 export type AdminMode = 'main' | 'disputas';
 
