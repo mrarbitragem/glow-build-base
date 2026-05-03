@@ -42,8 +42,9 @@ export function ClassificationTable({ category, clubs }: Props) {
             const pointsCell = (() => {
               if (!row) return '';
               if (dq) return 'Desclassificado';
-              if (!hasOverride && !eff) return '';
-              return `${eff}${hasOverride ? ' (aj.)' : ''}`;
+              if (hasOverride) return `${eff} (aj.)`;
+              if (eff > 0) return String(eff);
+              return '0';
             })();
             return (
               <tr key={place}>

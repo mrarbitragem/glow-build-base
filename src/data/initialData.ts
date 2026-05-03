@@ -82,9 +82,10 @@ export const INITIAL_DATA: TournamentState = {
     "1": 40, "2": 36, "3": 32, "4": 30, "5": 28, "6": 26, "7": 24, "8": 22,
     "9": 20, "10": 18, "11": 15, "12": 13, "13": 11
   },
+  /** Na categoria A o 8º lugar não soma pontos na geral (as restantes seguem a tabela global). */
+  categoryPointsByPlace: { a: { "8": 0 } },
   categoryClubPointsOverride: {},
-  /** KALE PRAIA desclassificado na categoria A — sem pontuação na geral. */
-  categoryClubDisqualified: { a: ['kale-praia'] },
+  categoryClubDisqualified: {},
   /** Só arranque / offline até o webhook `select_club` devolver a lista real. */
   clubs: [
     { id: "iate-clube", name: "IATE CLUBE", flag: "" },

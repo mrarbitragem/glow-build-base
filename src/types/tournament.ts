@@ -24,6 +24,11 @@ export interface TournamentState {
   event: EventInfo;
   pointsByPlace: Record<string, number>;
   /**
+   * Pontos por lugar só nessa categoria (substitui a tabela global `pointsByPlace` para esse lugar).
+   * Ex.: `{ a: { "8": 0 } }` — na categoria A o 8º lugar não pontua na geral.
+   */
+  categoryPointsByPlace: Record<string, Record<string, number>>;
+  /**
    * Pontos na geral por categoria e clube, em substituição aos `pointsByPlace` da posição obtida na chave.
    * Ex.: `{ a: { "club-id": 0 } }` zera os pontos do clube na categoria A.
    */

@@ -229,6 +229,28 @@ function readShowPlacementPref(): boolean {
   }
 }
 
+function finalizeCategoryPointsByPlace(s: TournamentState): TournamentState {
+  const catIds = new Set(s.categories.map(c => c.id));
+  const raw = s.categoryPointsByPlace;
+  const out: Record<string, Record<string, number>> = {};
+  if (raw && typeof raw === 'object') {
+    for (const [cid, inner] of Object.entries(raw)) {
+      if (!catIds.has(cid)) continue;
+      if (!inner || typeof inner !== 'object') continue;
+      const row: Record<string, number> = {};
+      for (const [placeKey, val] of Object.entries(inner as Record<string, unknown>)) {
+        const k = String(placeKey).trim();
+        if (!k) continue;
+        const n = typeof val === 'number' ? val : Number(val);
+        if (!Number.isFinite(n)) continue;
+        row[k] = Math.round(Math.max(0, n));
+      }
+      if (Object.keys(row).length > 0) out[cid] = row;
+    }
+  }
+  return { ...s, categoryPointsByPlace: out };
+}
+
 function finalizeCategoryClubPointsOverrides(s: TournamentState): TournamentState {
   const catIds = new Set(s.categories.map(c => c.id));
   const raw = s.categoryClubPointsOverride;
@@ -293,6 +315,7 @@ function normalizeState(s: TournamentState): TournamentState {
   s.categoryOrder = s.categoryOrder?.length ? s.categoryOrder : s.categories.map(c => c.id);
   return finalizeCategoryClubDisqualified(
     finalizeCategoryClubPointsOverrides(
+      finalizeCategoryPointsByPlace(
       repairSubEighteenFormat(
         repairSubFourteenFormat(
           repairSubSixteenSeeds(
@@ -302,6 +325,7 @@ function normalizeState(s: TournamentState): TournamentState {
           )
         )
       )
+    )
     )
   );
 }

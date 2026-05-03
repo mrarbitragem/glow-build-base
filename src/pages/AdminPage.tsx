@@ -8,6 +8,7 @@ import {
   categoryHasTwelveClubNineToTwelvePlayoff,
   visibleMatchCode,
   getComputedClassification,
+  getTablePointsForCategoryPlace,
   isClubDisqualifiedInCategory,
 } from '@/utils/bracketEngine';
 import { BracketView, BlockView } from '@/components/BracketView';
@@ -925,7 +926,8 @@ function AdminSidebar() {
                 {seededClubIdsForPointsAdjust.map(clubId => {
                   const cr = classificationPlaceByClub.get(clubId);
                   const place = cr?.place;
-                  const tabelaPts = place != null ? state.pointsByPlace[String(place)] ?? 0 : null;
+                  const tabelaPts =
+                    place != null ? getTablePointsForCategoryPlace(state, category.id, place) : null;
                   const overrideVal = state.categoryClubPointsOverride?.[category.id]?.[clubId];
                   const draft = pointsOverrideDraft[clubId];
                   const inputValue = draft !== undefined ? draft : overrideVal !== undefined ? String(overrideVal) : '';
