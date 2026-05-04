@@ -8,7 +8,7 @@ export function GeralPage() {
   const hasPoints = rows.some(r => r.total > 0);
 
   return (
-    <div className="page">
+    <div className="page page-classificacao-geral">
       <div className="hero card main">
         <div>
           <span className="badge main">Classificação geral</span>
@@ -39,7 +39,7 @@ export function GeralPage() {
             </thead>
             <tbody>
               {rows.map((row, idx) => (
-                <tr key={row.clubId}>
+                <tr key={row.clubId} className={idx < 3 ? `podium podium-${idx + 1}` : ''}>
                   <td className="num">{idx + 1}º</td>
                   <td>{row.name}</td>
                   {state.categoryOrder.map(id => (
@@ -57,6 +57,10 @@ export function GeralPage() {
             </tbody>
           </table>
         </div>
+      </div>
+      <div className="classification-congrats">
+        Parabéns a todos os clubes e atletas participantes pelo empenho, respeito e espírito
+        desportivo demonstrados ao longo da competição.
       </div>
     </div>
   );

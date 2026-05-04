@@ -53,6 +53,10 @@ export function ClassificacoesPorCategoriaPage() {
           );
         })}
       </div>
+      <div className="classification-congrats">
+        Parabéns a todos os clubes e atletas participantes pelo empenho, respeito e espírito
+        desportivo demonstrados ao longo da competição.
+      </div>
     </div>
   );
 }

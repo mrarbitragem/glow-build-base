@@ -48,8 +48,9 @@ export function ClassificationTable({ category, clubs, heading = 'Classificaçã
               if (eff > 0) return String(eff);
               return '0';
             })();
+            const podiumClass = place <= 3 ? `podium podium-${place}` : '';
             return (
-              <tr key={place}>
+              <tr key={place} className={podiumClass}>
                 <td className="num">{place}º</td>
                 <td>{row ? row.name : ''}</td>
                 <td>{pointsCell}</td>

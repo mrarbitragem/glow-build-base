@@ -32,6 +32,9 @@
     --warning-soft: 30 100% 94%;
     --success: 153 65% 28%;
     --primary-soft: 207 80% 95%;
+    --podium-1-bg: 45 100% 93%;
+    --podium-2-bg: 210 20% 93%;
+    --podium-3-bg: 30 65% 90%;
 
     --topbar-bg: 207 35% 18%;
     --brand-light: 207 55% 62%;
@@ -75,6 +78,9 @@
     --warning-soft: 30 30% 18%;
     --success: 153 50% 40%;
     --primary-soft: 207 30% 18%;
+    --podium-1-bg: 45 70% 22%;
+    --podium-2-bg: 210 18% 24%;
+    --podium-3-bg: 28 55% 23%;
 
     --topbar-bg: 210 30% 8%;
     --brand-light: 207 55% 62%;
@@ -699,11 +705,34 @@
 }
 .classification h3 { margin: 0 0 12px; font-size: 1rem; }
 
+.page-classificacao-geral .hero.card.main,
+.page-classificacoes-por-categoria .hero.card.main {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid hsl(var(--primary) / 20%);
+  background:
+    radial-gradient(circle at 92% 18%, hsl(var(--primary) / 16%), transparent 42%),
+    linear-gradient(140deg, hsl(var(--card)), hsl(var(--surface-main)));
+}
+.page-classificacao-geral .hero.card.main::after,
+.page-classificacoes-por-categoria .hero.card.main::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(120deg, transparent 0%, hsl(var(--primary) / 6%) 45%, transparent 100%);
+}
+
 .classificacoes-por-categoria-list {
   gap: 18px;
 }
 .classificacoes-categoria-section {
   margin: 0;
+  padding: 16px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 16px;
+  background: linear-gradient(180deg, hsl(var(--card)), hsl(var(--surface-2)));
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
 }
 .classificacoes-categoria-title {
   margin: 0 0 10px;
@@ -723,6 +752,29 @@
 .table th { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: hsl(var(--muted-foreground)); }
 .table td { font-size: 0.97rem; }
 .table td.num { width: 70px; font-weight: 800; }
+.table tr.podium td {
+  font-weight: 700;
+}
+.table tr.podium-1 td {
+  background: hsl(var(--podium-1-bg));
+}
+.table tr.podium-2 td {
+  background: hsl(var(--podium-2-bg));
+}
+.table tr.podium-3 td {
+  background: hsl(var(--podium-3-bg));
+}
+.table tr.podium td:first-child {
+  border-left: 4px solid hsl(var(--primary) / 0.6);
+}
+.table tr.podium-1 td.num::before,
+.table tr.podium-2 td.num::before,
+.table tr.podium-3 td.num::before {
+  margin-right: 4px;
+}
+.table tr.podium-1 td.num::before { content: '🥇'; }
+.table tr.podium-2 td.num::before { content: '🥈'; }
+.table tr.podium-3 td.num::before { content: '🥉'; }
 
 /* Panel */
 .panel { padding: 16px; }
@@ -941,6 +993,30 @@
 }
 .partial-classification-notice {
   margin-bottom: 16px;
+  border-radius: 14px;
+  border-color: hsl(var(--warning) / 48%);
+  background:
+    linear-gradient(135deg, hsl(var(--warning) / 14%), hsl(var(--warning) / 8%));
+}
+.classification-congrats {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid hsl(var(--primary) / 30%);
+  background:
+    linear-gradient(135deg, hsl(var(--primary) / 12%), hsl(var(--primary) / 5%));
+  color: hsl(var(--foreground));
+  font-weight: 600;
+}
+
+.dark .classificacoes-categoria-section {
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
+}
+.dark .table tr.podium td {
+  color: hsl(var(--foreground));
+}
+.dark .table tr.podium td.num::before {
+  filter: saturate(1.05) brightness(0.92);
 }
 
 /* Round schedule */
@@ -1070,6 +1146,10 @@
   .canvas-head,
   .block-title-strip span {
     display: none !important;
+  }
+  .table tr.podium td.num::before {
+    content: '' !important;
+    margin-right: 0 !important;
   }
 
   /* «Venc. M…» → mostrar só «Aguardando» no papel */
