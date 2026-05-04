@@ -24,10 +24,14 @@ import { normalizeClubFlagSrc } from '@/utils/clubFlag';
 const PLACEMENT_PREF_KEY = 'interclubes-show-positions';
 
 /**
- * Após `select_club`, pedir `load_chave` em lote só a estas categorias (menos carga no n8n).
- * A `c` estava de fora: após o sync de clubes a chave C nunca fundia com a BD até mudar de separador.
+ * Categorias que devem ser hidratadas após sincronizar clubes.
+ * Para as páginas de classificação ficarem estáticas e completas sem abrir separadores,
+ * carregamos todas as categorias em lote.
  */
-const CHAVE_IDS_AFTER_CLUB_SYNC: readonly string[] = ['40+', 'c', 'd', 'iniciante', '50', 'sub-12', '60'];
+function allCategoryIdsForHydration(state: TournamentState): string[] {
+  const order = state.categoryOrder?.length ? state.categoryOrder : state.categories.map(c => c.id);
+  return [...new Set(order.map(id => String(id).trim()).filter(Boolean))];
+}
 
 function defaultCategoryIdOnBoot(): string {
   const s = loadState();
@@ -460,7 +464,7 @@ export function TournamentProvider({ children }: { children: ReactNode }) {
         : prev.event,
       categories: prev.categories.map(cat => ({ ...cat, importedPlacements: [] })),
     };
-    const merged = await fetchAndMergeChavesForIds(withRemoteClubs, [...CHAVE_IDS_AFTER_CLUB_SYNC]);
+    const merged = await fetchAndMergeChavesForIds(withRemoteClubs, allCategoryIdsForHydration(withRemoteClubs));
     /** Depois das chaves: alinha nomes/ids com `select_club`; só limpa vagas que ainda não correspondem a nenhum clube. */
     const sanitized: TournamentState = {
       ...merged,
