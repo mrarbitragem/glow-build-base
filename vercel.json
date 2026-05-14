@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "destination": "https://mrarbitragem.com.br",
+      "permanent": true
+    }
+  ]
+}
